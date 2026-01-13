@@ -38,7 +38,8 @@ export interface Database {
                     store_id: string
                     store_sku_id: string | null
                     care_category_id: string
-                    session_token: string
+                    session_token: string | null
+                    receipt_id: string | null
                     token_expires_at: string
                     planted_at: string
                     window_days: number
@@ -53,7 +54,8 @@ export interface Database {
                     store_id: string
                     store_sku_id?: string | null
                     care_category_id: string
-                    session_token?: string
+                    session_token?: string | null
+                    receipt_id?: string | null
                     token_expires_at?: string
                     planted_at?: string
                     window_days?: number
@@ -68,7 +70,8 @@ export interface Database {
                     store_id?: string
                     store_sku_id?: string | null
                     care_category_id?: string
-                    session_token?: string
+                    session_token?: string | null
+                    receipt_id?: string | null
                     token_expires_at?: string
                     planted_at?: string
                     window_days?: number

@@ -17,10 +17,9 @@ export default function Header() {
                 <span style={{ fontFamily: "var(--font-serif)", fontSize: "1.25rem", fontWeight: "bold" }}>BetterRoots</span>
             </Link>
 
-            <nav style={{ display: "flex", gap: "1.5rem" }}>
-                <Link href="/library" style={{ color: "var(--color-sage-100)", textDecoration: "none", fontSize: "0.95rem", fontWeight: 500 }}>
-                    Care Library
-                </Link>
+            <nav style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
+                <Link href="/dashboard" style={{ color: "white", textDecoration: "none", fontWeight: 500 }}>My Garden</Link>
+                <Link href="/intake" style={{ textDecoration: "none", color: "white", fontWeight: 500 }}>Scan Receipt</Link>
             </nav>
         </header>
     );

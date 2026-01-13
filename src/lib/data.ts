@@ -108,6 +108,93 @@ export const PLANTS: Plant[] = [
         imageUrl: "/images/aglaonema-snow-white.png",
         careSchedule: [],
         troubleshooting: []
+    },
+    // NEW CATEGORIES FROM CARE GUIDE
+    {
+        id: "evergreen-shrubs",
+        name: "Evergreen Shrubs",
+        botanicalName: "Various",
+        careSchedule: [
+            { day: 1, action: "Water", description: "Soak the root ball thoroughly to settle soil." },
+            { day: 2, action: "Water", description: "Water again ensuring deep penetration." },
+            { day: 3, action: "Check Soil", description: "Ensure soil is moist but not waterlogged." },
+            { day: 5, action: "Water", description: "Water deeply if the top inch of soil is dry." },
+            { day: 7, action: "Water", description: "Maintain consistent moisture. Mulch helps retain it." },
+            { day: 10, action: "Water", description: "Water if no rain has fallen recently." },
+            { day: 14, action: "Weed", description: "Clear any weeds from the base to reduce competition." }
+        ],
+        troubleshooting: [
+            { symptom: "Webbing on leaves", diagnosis: "Spider Mites", action: "Watch for mites during hot, dry weather. Spray with water." }
+        ]
+    },
+    {
+        id: "deciduous-flowering-shrubs",
+        name: "Deciduous Flowering Shrubs",
+        botanicalName: "Various",
+        careSchedule: [
+            { day: 1, action: "Water", description: "Water at the base to avoid wetting leaves." },
+            { day: 2, action: "Check", description: "Check for wilting, especially in afternoon sun." },
+            { day: 3, action: "Water", description: "Keep soil consistently damp to establish roots." },
+            { day: 4, action: "Water", description: "Water thoroughly. Azaleas and Hydrangeas love moisture." },
+            { day: 6, action: "Moisture Check", description: "Dig down 2 inches. If dry, water deeply." },
+            { day: 9, action: "Water", description: "Water deeply if rainfall has been scarce." },
+            { day: 12, action: "Inspect", description: "Look for yellowing leaves (chlorosis)." },
+            { day: 14, action: "Mulch", description: "Refresh mulch to keep roots cool and moist." }
+        ],
+        troubleshooting: []
+    },
+    {
+        id: "annual-flowering-plants",
+        name: "Annual Flowering Plants",
+        botanicalName: "Various",
+        careSchedule: [
+            { day: 1, action: "Water", description: "Give a thorough drink. Containers dry out fast." },
+            { day: 2, action: "Check Pot", description: "Lift pot; if light, water immediately. If heavy, wait." },
+            { day: 3, action: "Water", description: "Daily watering is key for blooms in heat." },
+            { day: 5, action: "Deadhead", description: "Pinch off spent blooms to encourage new flowers." },
+            { day: 7, action: "Water", description: "Keep it up! Consistent water equals more flowers." },
+            { day: 10, action: "Check", description: "Look for drooping leaves or dry soil surface." },
+            { day: 14, action: "Fertilize", description: "Apply a bloom-booster liquid fertilizer." }
+        ],
+        troubleshooting: [
+            { symptom: "Sticky leaves", diagnosis: "Aphids/Whiteflies", action: "Treat with insecticidal soap." }
+        ]
+    },
+    {
+        id: "perennial-flowering-plants",
+        name: "Perennial Flowering Plants",
+        botanicalName: "Various",
+        careSchedule: [
+            { day: 1, action: "Water", description: "Water in well to remove air pockets around roots." },
+            { day: 2, action: "Check", description: "Ensure soil is settling well." },
+            { day: 3, action: "Water", description: "Keep moist. Perennials need help settling in." },
+            { day: 5, action: "Water", description: "Water if the top inch of soil feels dry." },
+            { day: 7, action: "Inspect", description: "Check that the plant is standing upright and firm." },
+            { day: 10, action: "Water", description: "Deep watering promotes deep roots." },
+            { day: 14, action: "Mulch", description: "Verify mulch layer is suppressing weeds effectively." }
+        ],
+        troubleshooting: [
+            { symptom: "Holes in leaves", diagnosis: "Slugs/Snails", action: "Check in wet conditions." }
+        ]
+    },
+    {
+        id: "vegetable-starts",
+        name: "Vegetable Starts",
+        botanicalName: "Various",
+        careSchedule: [
+            { day: 1, action: "Water", description: "Keep soil moist to help establishment." },
+            { day: 2, action: "Check Moisture", description: "Ensure soil remains damp. Water if dry." },
+            { day: 3, action: "Water", description: "Water continuously to support root growth." },
+            { day: 4, action: "Moisture Check", description: "Tomatoes need consistent water. Check top inch." },
+            { day: 5, action: "Water", description: "Water deeply. Avoid wetting leaves to prevent disease." },
+            { day: 7, action: "Water", description: "Water every other day. Mulch now if you haven't." },
+            { day: 9, action: "Water", description: "Check soil; water if top inch is dry." },
+            { day: 12, action: "Water", description: "Maintain consistent moisture for fruit set." },
+            { day: 14, action: "Fertilize", description: "Light feeding after Day 14." }
+        ],
+        troubleshooting: [
+            { symptom: "Insects on leaves", diagnosis: "Pests", action: "Inspect undersides of leaves." }
+        ]
     }
 ];
 

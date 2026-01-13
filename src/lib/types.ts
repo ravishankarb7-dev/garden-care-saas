@@ -13,6 +13,7 @@ export type TroubleshootingItem = {
 export type Plant = {
     id: string; // The "slug" or key (e.g. 'aglaonema-silver-bay')
     uuid?: string; // The database primary key
+    skuId?: string; // The specific SKU ID from store_skus
     name: string; // Common name
     botanicalName: string;
     imageUrl?: string;
