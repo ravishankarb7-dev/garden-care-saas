@@ -1,0 +1,54 @@
+.section {
+    padding: 6rem 1.5rem;
+    background-color: var(--color-green-900);
+    /* Dark background for variety */
+    color: white;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.header {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 4rem;
+    color: #F2F7F4;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 3rem;
+}
+
+.review {
+    background: rgba(255, 255, 255, 0.05);
+    /* Glassmorphism */
+    padding: 2rem;
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+}
+
+.stars {
+    color: #EAB308;
+    /* Yellow-400 */
+    display: flex;
+    gap: 4px;
+    margin-bottom: 1rem;
+}
+
+.quote {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    font-style: italic;
+    margin-bottom: 1.5rem;
+    opacity: 0.95;
+}
+
+.author {
+    font-weight: 600;
+    font-style: normal;
+    color: var(--color-sage-400);
+}

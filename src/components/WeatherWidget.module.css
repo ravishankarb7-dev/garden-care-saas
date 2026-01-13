@@ -1,0 +1,60 @@
+.container {
+    background: var(--color-glass-light);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--color-glass-border);
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.alert {
+    background: rgba(220, 38, 38, 0.2);
+    border-color: rgba(220, 38, 38, 0.4);
+}
+
+/* Specific overwrite for calm state in glass mode */
+.calm {
+    background: var(--color-glass-light);
+}
+
+.content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.iconWrapper {
+    background: var(--color-lime-500);
+    color: var(--color-green-900);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--color-lime-100);
+    margin-bottom: 0.25rem;
+}
+
+.message {}
+
+.loading {
+    padding: 1rem;
+    font-style: italic;
+    color: #6b7280;
+}
+
+.icon {
+    width: 24px;
+    height: 24px;
+}

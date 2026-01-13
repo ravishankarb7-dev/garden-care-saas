@@ -1,0 +1,48 @@
+.section {
+    padding: 6rem 1.5rem;
+    background-color: white;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 3rem;
+    text-align: center;
+}
+
+.card {
+    padding: 2rem;
+    border-radius: 20px;
+    background: var(--color-bg-cream);
+    /* Subtle separation */
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.iconWrapper {
+    display: inline-flex;
+    padding: 1rem;
+    background-color: var(--color-sage-100);
+    color: var(--color-green-800);
+    border-radius: 50%;
+    margin-bottom: 1.5rem;
+}
+
+.stepTitle {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--color-text-main);
+}
+
+.stepDesc {
+    color: var(--color-text-muted);
+    line-height: 1.6;
+}

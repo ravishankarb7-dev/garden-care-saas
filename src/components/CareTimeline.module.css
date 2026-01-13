@@ -1,0 +1,87 @@
+.container {
+    margin-bottom: 2rem;
+}
+
+.title {
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.item {
+    display: flex;
+    gap: 1rem;
+    background: white;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.past {
+    opacity: 0.6;
+}
+
+.today .task {
+    border-color: var(--color-lime-500);
+    background: rgba(212, 244, 130, 0.1);
+    /* Lime tint */
+}
+
+.marker {
+    position: absolute;
+    left: -2.0rem;
+    /* Align with timeline line */
+    top: 1.5rem;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--color-green-600);
+    border: 2px solid var(--color-green-900);
+    /* Matches bg */
+}
+
+.today .marker {
+    background: var(--color-lime-500);
+    box-shadow: 0 0 0 4px rgba(212, 244, 130, 0.2);
+}
+
+.actionHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.date {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-lime-400);
+    margin-bottom: 0.5rem;
+}
+
+.today .date {
+    color: var(--color-lime-500);
+    font-weight: 700;
+}
+
+.action {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--color-white);
+    margin-bottom: 0.25rem;
+}
+
+.description {
+    color: var(--color-text-light);
+    font-size: 0.95rem;
+    opacity: 0.9;
+}
+
+.check {
+    color: var(--color-green-600);
+}
