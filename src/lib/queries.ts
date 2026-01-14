@@ -156,7 +156,7 @@ export async function createCareSessions(
 
     const { error } = await supabase
         .from('care_sessions')
-        .insert(sessions);
+        .insert(sessions as any);
 
     if (error) {
         console.error("Error creating sessions raw:", error);

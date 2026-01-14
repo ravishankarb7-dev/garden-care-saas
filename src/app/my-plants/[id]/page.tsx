@@ -29,7 +29,7 @@ export default function MyPlantPage() {
                         store_sku:store_skus(*)
                     `)
                     .eq('id', id)
-                    .single();
+                    .single() as { data: any, error: any };
 
                 if (error || !session) {
                     console.error("Session not found", error);

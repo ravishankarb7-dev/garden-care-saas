@@ -10,6 +10,7 @@ import { ScannedReceiptData } from "@/lib/ocr";
 import { ArrowLeft, Keyboard } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Plant } from "@/lib/types";
+import { Button } from "@/components/ui/Button";
 
 export default function IntakePage() {
     const router = useRouter();
@@ -86,23 +87,17 @@ export default function IntakePage() {
     };
 
     return (
-        <div style={{ minHeight: "100vh", backgroundColor: "#FFFFFF" }}>
+        <div style={{ minHeight: "100vh", backgroundColor: "var(--color-bg-cream)" }}>
             <Header />
 
-            <main style={{ maxWidth: "800px", margin: "0 auto", padding: "3rem 1.5rem" }}>
+            <main className="max-w-[800px] mx-auto px-4 py-8 md:py-16">
                 {step === "SELECT" && (
                     <>
-                        <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-                            <h1 style={{
-                                fontSize: "2.5rem",
-                                fontWeight: 700,
-                                color: "#1F2937",
-                                marginBottom: "1rem",
-                                letterSpacing: "-0.02em"
-                            }}>
+                        <div className="text-center mb-8 md:mb-12">
+                            <h1 className="text-3xl md:text-5xl font-bold font-serif text-green-900 mb-4 tracking-tight">
                                 New Plant Care
                             </h1>
-                            <p style={{ fontSize: "1.1rem", color: "#6B7280", maxWidth: "500px", margin: "0 auto" }}>
+                            <p className="text-lg text-gray-500 max-w-[540px] mx-auto leading-relaxed">
                                 Upload your receipt to automatically generate care schedules for all your new plants.
                             </p>
                         </div>
@@ -117,21 +112,21 @@ export default function IntakePage() {
                                 onClick={() => setStep("MANUAL")}
                                 style={{
                                     background: "none", border: "none", cursor: "pointer",
-                                    color: "#059669", fontWeight: 500,
+                                    color: "var(--color-green-700)", fontWeight: 600,
                                     display: "inline-flex", alignItems: "center", gap: "0.5rem",
-                                    padding: "0.5rem 1rem", borderRadius: "8px",
-                                    transition: "background 0.2s"
+                                    padding: "0.75rem 1.25rem", borderRadius: "8px",
+                                    transition: "all 0.2s"
                                 }}
-                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#F0FDF4"}
+                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "var(--color-sage-100)"}
                                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                             >
-                                <Keyboard size={18} />
-                                Don't have a receipt? Enter plants manually
+                                <Keyboard size={20} />
+                                <span style={{ textDecoration: "underline", textUnderlineOffset: "4px" }}>Don't have a receipt? Enter plants manually</span>
                             </button>
                         </div>
 
                         <div style={{
-                            borderTop: "1px solid #E5E7EB",
+                            borderTop: "1px solid var(--color-sage-100)",
                             paddingTop: "3rem",
                             marginTop: "3rem"
                         }}>
@@ -142,18 +137,13 @@ export default function IntakePage() {
 
                 {step === "REVIEW" && scannedData && (
                     <div>
-                        <button
+                        <Button
+                            variant="ghost"
                             onClick={() => setStep("SELECT")}
-                            style={{
-                                display: "flex", alignItems: "center", gap: "0.5rem",
-                                background: "none", border: "none",
-                                color: "#6B7280", cursor: "pointer",
-                                marginBottom: "2rem",
-                                fontSize: "0.95rem"
-                            }}
+                            className="mb-6 pl-0 hover:bg-transparent hover:text-green-900"
                         >
-                            <ArrowLeft size={18} /> Back to Upload
-                        </button>
+                            <ArrowLeft size={18} className="mr-2" /> Back to Upload
+                        </Button>
 
                         <ReceiptAnalysisForm
                             initialData={scannedData}
@@ -165,18 +155,13 @@ export default function IntakePage() {
 
                 {step === "MANUAL" && (
                     <div>
-                        <button
+                        <Button
+                            variant="ghost"
                             onClick={() => setStep("SELECT")}
-                            style={{
-                                display: "flex", alignItems: "center", gap: "0.5rem",
-                                background: "none", border: "none",
-                                color: "#6B7280", cursor: "pointer",
-                                marginBottom: "2rem",
-                                fontSize: "0.95rem"
-                            }}
+                            className="mb-8 pl-0 hover:bg-transparent hover:text-green-900"
                         >
-                            <ArrowLeft size={18} /> Back to Upload
-                        </button>
+                            <ArrowLeft size={18} className="mr-2" /> Back to Upload
+                        </Button>
 
                         <ManualEntryForm
                             onConfirm={handleManualConfirm}
@@ -188,3 +173,4 @@ export default function IntakePage() {
         </div>
     );
 }
+
