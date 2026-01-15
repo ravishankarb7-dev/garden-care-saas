@@ -132,7 +132,111 @@ export default function MyPlantPage() {
 
                     {/* Care Schedule */}
                     <div style={{ padding: "2rem" }}>
-                        <h2 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: "1.5rem", color: "#1F2937" }}>Care Schedule</h2>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+                            <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#1F2937", margin: 0 }}>Care Schedule</h2>
+                            {/* Calendar Dropdown */}
+                            <div className="relative group" style={{ zIndex: 50 }}>
+                                <button
+                                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition-colors border border-green-200"
+                                >
+                                    <Calendar size={16} />
+                                    Add to Calendar
+                                </button>
+                                {/* Hover Dropdown */}
+                                <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-xl hidden group-hover:block p-1">
+                                    <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                        Choose Format
+                                    </div>
+
+                                    <button
+                                        onClick={() => {
+                                            if (!plant) return;
+                                            import("@/lib/calendar").then(mod => {
+                                                const allEvents = plant.careSchedule.map((task: any) => {
+                                                    const pDate = new Date(plant.plantedAt);
+                                                    const taskDate = new Date(pDate);
+                                                    taskDate.setDate(pDate.getDate() + task.day);
+
+                                                    return {
+                                                        title: `${task.action} ${plant.name}`,
+                                                        description: task.description,
+                                                        start: taskDate,
+                                                        location: "My Garden"
+                                                    };
+                                                });
+                                                mod.downloadScheduleICS(allEvents, `${plant.name.replace(/\s+/g, '_')}_Full_Schedule.ics`);
+                                            });
+                                        }}
+                                        className="w-full text-left px-3 py-3 hover:bg-green-50 rounded-md text-gray-700 flex flex-col group/btn"
+                                    >
+                                        <span className="font-semibold text-green-700 flex items-center justify-between">
+                                            Download Full Custom Schedule
+                                            <span className="text-[10px] bg-green-100 text-green-800 px-1.5 py-0.5 rounded border border-green-200">Recommended</span>
+                                        </span>
+                                        <span className="text-xs text-gray-500 mt-1 leading-snug">
+                                            Generates a .ics file with the <b>exact</b> {plant.careSchedule.length}-day custom plan.
+                                            <br />
+                                            <span className="opacity-75">Import into Google Calendar, Outlook, or Apple.</span>
+                                        </span>
+                                    </button>
+
+                                    <div className="h-px bg-gray-100 my-1"></div>
+
+                                    <button
+                                        onClick={() => {
+                                            if (!plant) return;
+
+                                            // Analyze schedule for "Water" frequency
+                                            const waterEvents = plant.careSchedule.filter((t: any) => t.action === "Water").sort((a: any, b: any) => a.day - b.day);
+                                            let recurRule = undefined;
+                                            let firstWaterDay = 0;
+
+                                            if (waterEvents.length > 0) {
+                                                firstWaterDay = waterEvents[0].day;
+                                                // Simple heuristic: if day 1 and day 8, it's weekly.
+                                                if (waterEvents.length > 1) {
+                                                    const gap = waterEvents[1].day - waterEvents[0].day;
+                                                    if (gap === 7) recurRule = "RRULE:FREQ=WEEKLY";
+                                                    else if (gap === 14) recurRule = "RRULE:FREQ=WEEKLY;INTERVAL=2";
+                                                    else recurRule = `RRULE:FREQ=DAILY;INTERVAL=${gap}`;
+                                                } else {
+                                                    // Single event? assume weekly default for generic care
+                                                    recurRule = "RRULE:FREQ=WEEKLY";
+                                                }
+                                            }
+
+                                            // Calculate actual start date
+                                            const plantDate = new Date(plant.plantedAt);
+                                            const nextDate = new Date(plantDate);
+                                            nextDate.setDate(plantDate.getDate() + firstWaterDay);
+
+                                            if (nextDate < new Date()) {
+                                                nextDate.setDate(new Date().getDate() + 1);
+                                            }
+
+                                            import("@/lib/calendar").then(mod => {
+                                                const link = mod.generateGoogleCalendarLink({
+                                                    title: `Care for ${plant.name}`,
+                                                    description: `Time to Water, Fertilize, and Check your ${plant.name}.`,
+                                                    start: nextDate,
+                                                    location: "My Garden",
+                                                    recurrence: recurRule
+                                                });
+                                                window.open(link, '_blank');
+                                            });
+                                        }}
+                                        className="w-full text-left px-3 py-3 hover:bg-gray-50 rounded-md text-gray-700 flex flex-col"
+                                    >
+                                        <span className="font-semibold text-gray-900">Google Calendar (Simple)</span>
+                                        <span className="text-xs text-gray-500 mt-1 leading-snug">
+                                            Opens a simple <b>recurring</b> reminder event.
+                                            <br />
+                                            <span className="text-orange-600 font-medium text-[10px]">⚠️ May not match custom schedule changes.</span>
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
                         <div style={{ display: "grid", gap: "1rem" }}>
                             {plant.careSchedule.map((task: any, idx: number) => {

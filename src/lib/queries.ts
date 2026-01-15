@@ -135,7 +135,8 @@ export async function createCareSessions(
     receiptId: string,
     plants: Plant[],
     date: string,
-    zip: string
+    zip: string,
+    deviceId: string
 ): Promise<boolean> {
     // Hardcoded Store ID (Store S1) for prototype
     const STORE_ID = "87661f59-fae5-5d6f-98fa-5880f4a14a42";
@@ -144,11 +145,11 @@ export async function createCareSessions(
         store_id: STORE_ID,
         store_sku_id: plant.skuId || null,
         care_category_id: plant.uuid!, // Assert UUID exists as our logic ensures it for valid selections
-        receipt_id: receiptId,
+        receipt_id: deviceId, // Store Device ID as the Receipt ID (merging all plants to one device-garden)
         planted_at: new Date(date).toISOString(),
         zip: zip,
-        session_token: null, // Using receipt_id as the grouper
-        token_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // +30 days
+        session_token: null, // Unused because it requires UUID
+        token_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // +1 year
         window_days: 7 // Default window
     }));
 
@@ -182,6 +183,27 @@ export async function getCareSessionsByReceipt(receiptIds: string[]): Promise<an
 
     if (error) {
         console.error("Error fetching sessions:", error);
+        return [];
+    }
+
+    return data;
+}
+
+export async function getCareSessionsByDeviceId(deviceId: string): Promise<any[]> {
+    if (!deviceId) return [];
+
+    const { data, error } = await supabase
+        .from('care_sessions')
+        .select(`
+            *,
+            care_category:care_categories(*),
+            store_sku:store_skus(*)
+        `)
+        .eq('receipt_id', deviceId) // Query text column
+        .order('planted_at', { ascending: false });
+
+    if (error) {
+        console.error("Error fetching sessions by device:", JSON.stringify(error, null, 2));
         return [];
     }
 

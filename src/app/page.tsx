@@ -2,86 +2,82 @@
 
 import Link from "next/link";
 import Header from "@/components/Header";
-import HeroSection from "@/components/HeroSection";
-import FeatureSection from "@/components/FeatureSection";
-import TestimonialSection from "@/components/TestimonialSection";
-import { PLANTS } from "@/lib/data";
-import { motion } from "framer-motion";
+import { Sprout, Calendar, MessageSquarePlus } from "lucide-react";
 
 export default function Home() {
   return (
-    <main style={{ scrollBehavior: "smooth" }}>
+    <main className="min-h-screen flex flex-col bg-bg-cream">
       <Header />
 
-      <HeroSection />
+      <section className="flex-1 flex flex-col items-center justify-center -mt-16 px-4 py-12">
+        <div className="text-center mb-16 max-w-2xl mx-auto">
+          <h1 className="text-4xl md:text-6xl font-serif font-bold text-green-900 mb-6 leading-tight">
+            Foolproof plant care, <br />
+            <span className="text-green-700 italic">delivered by nature.</span>
+          </h1>
+          <p className="text-xl text-gray-600">
+            The only system that adapts to your local weather. Zero guesswork. 100% bloom guarantee.
+          </p>
+        </div>
 
-      <FeatureSection />
+        <div className="grid md:grid-cols-3 gap-8 w-full max-w-5xl">
 
-      <section id="demo" style={{
-        padding: "6rem 1.5rem",
-        maxWidth: "1000px",
-        margin: "0 auto",
-        textAlign: "center"
-      }} aria-label="Interactive Demo">
-        <h2 style={{
-          fontSize: "2.5rem",
-          marginBottom: "1rem",
-          color: "var(--color-green-900)"
-        }}>
-          Try the Experience
-        </h2>
-        <p style={{
-          marginBottom: "3rem",
-          color: "var(--color-text-muted)",
-          fontSize: "1.2rem"
-        }}>
-          Select a plant below to simulate scanning a QR code.
-        </p>
+          {/* Card 1: Add New Plants */}
+          <Link href="/intake" className="group no-underline w-full">
+            <div className="h-full bg-white p-10 rounded-3xl shadow-lg border border-sage-100 hover:shadow-2xl hover:border-green-300 transition-all duration-300 transform hover:-translate-y-2 flex flex-col items-center text-center">
+              <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-8 group-hover:bg-green-100 transition-colors">
+                <Sprout size={48} className="text-green-700" strokeWidth={1.5} />
+              </div>
+              <h2 className="text-2xl font-bold font-serif text-green-900 mb-4 group-hover:text-green-700 transition-colors">
+                Add new plants
+              </h2>
+              <p className="text-gray-500 leading-relaxed mb-6">
+                Scan your receipt or manually add plants to get started.
+              </p>
+              <span className="mt-auto text-sm font-bold tracking-widest uppercase text-green-800 border-b border-green-200 pb-1 group-hover:border-green-600 transition-colors">
+                Get Started
+              </span>
+            </div>
+          </Link>
 
-        <div style={{ display: "grid", gap: "1.5rem", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))" }}>
-          {PLANTS.map((plant, idx) => (
-            <Link key={plant.id} href={`/plant/${plant.id}`} style={{ textDecoration: "none" }}>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                whileHover={{ y: -8, transition: { duration: 0.2 } }}
-                style={{
-                  padding: "2rem",
-                  background: "white",
-                  borderRadius: "20px",
-                  boxShadow: "0 20px 40px -10px rgba(0,0,0,0.05)",
-                  border: "1px solid #F3F4F6",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  textAlign: "left"
-                }}
-              >
-                <div>
-                  <h3 style={{ fontSize: "1.5rem", color: "var(--color-text-main)", marginBottom: "0.5rem" }}>{plant.name}</h3>
-                  <p style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>{plant.botanicalName}</p>
-                </div>
-                <div style={{
-                  marginTop: "1.5rem",
-                  fontSize: "0.9rem",
-                  fontWeight: "600",
-                  color: "var(--color-green-800)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem"
-                }}>
-                  Start Care →
-                </div>
-              </motion.div>
-            </Link>
-          ))}
+          {/* Card 2: My Garden */}
+          <Link href="/dashboard" className="group no-underline w-full">
+            <div className="h-full bg-white p-10 rounded-3xl shadow-lg border border-sage-100 hover:shadow-2xl hover:border-green-300 transition-all duration-300 transform hover:-translate-y-2 flex flex-col items-center text-center">
+              <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-8 group-hover:bg-blue-100 transition-colors">
+                <Calendar size={48} className="text-blue-700" strokeWidth={1.5} />
+              </div>
+              <h2 className="text-2xl font-bold font-serif text-green-900 mb-4 group-hover:text-green-700 transition-colors">
+                Go to my garden
+              </h2>
+              <p className="text-gray-500 leading-relaxed mb-6">
+                View your personalized schedule for watering & care.
+              </p>
+              <span className="mt-auto text-sm font-bold tracking-widest uppercase text-green-800 border-b border-green-200 pb-1 group-hover:border-green-600 transition-colors">
+                View Dashboard
+              </span>
+            </div>
+          </Link>
+
+          {/* Card 3: Feedback */}
+          <Link href="/feedback" className="group no-underline w-full">
+            <div className="h-full bg-white p-10 rounded-3xl shadow-lg border border-sage-100 hover:shadow-2xl hover:border-green-300 transition-all duration-300 transform hover:-translate-y-2 flex flex-col items-center text-center">
+              <div className="w-24 h-24 bg-amber-50 rounded-full flex items-center justify-center mb-8 group-hover:bg-amber-100 transition-colors">
+                <MessageSquarePlus size={48} className="text-amber-700" strokeWidth={1.5} />
+              </div>
+              <h2 className="text-2xl font-bold font-serif text-green-900 mb-4 group-hover:text-green-700 transition-colors">
+                Grins & Gripes
+              </h2>
+              <p className="text-gray-500 leading-relaxed mb-6">
+                Share your feedback, request features, or report issues.
+              </p>
+              <span className="mt-auto text-sm font-bold tracking-widest uppercase text-green-800 border-b border-green-200 pb-1 group-hover:border-green-600 transition-colors">
+                Share Thoughts
+              </span>
+            </div>
+          </Link>
+
         </div>
       </section>
-
-      <TestimonialSection />
     </main>
   );
 }

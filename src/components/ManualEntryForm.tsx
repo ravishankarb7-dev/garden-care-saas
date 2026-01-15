@@ -27,15 +27,28 @@ export default function ManualEntryForm({ onConfirm, onCancel }: ManualEntryForm
     const [selectedPlants, setSelectedPlants] = useState<Plant[]>([]);
 
     // New fields
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    // Use local date YYYY-MM-DD for default
+    const [date, setDate] = useState(() => {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    });
     const [zip, setZip] = useState("");
+    const [zipValid, setZipValid] = useState(false);
+    const [verifyingZip, setVerifyingZip] = useState(false);
+    const [zipError, setZipError] = useState("");
 
     // Load plants on mount
     useEffect(() => {
         async function load() {
             try {
                 const plants = await getPlants();
-                setAllPlants(plants);
+                // Filter out categories (items without skuId) per user request
+                // We only want specific SKUs to appear in search
+                const onlySkus = plants.filter(p => !!p.skuId);
+                setAllPlants(onlySkus);
             } catch (err) {
                 console.error("Failed to load plants", err);
             } finally {
@@ -52,16 +65,51 @@ export default function ManualEntryForm({ onConfirm, onCancel }: ManualEntryForm
             return;
         }
 
-        // Use our fuzzy matcher
         const matches = findMatchingPlants(query, allPlants, 4);
-        setSuggestions(matches.slice(0, 5)); // limit to top 5
+        setSuggestions(matches.slice(0, 5));
     }, [query, allPlants]);
+
+    // Verify Zip Code REAL-TIME
+    useEffect(() => {
+        const checkZip = async () => {
+            // Reset valid state on any change
+            setZipValid(false);
+            setZipError("");
+
+            // Only check if it looks like a complete zip (5 digits)
+            if (!/^\d{5}$/.test(zip)) {
+                if (zip.length > 5) setZipError("Zip code must be 5 digits");
+                return;
+            }
+
+            setVerifyingZip(true);
+            try {
+                // Dry run API checks against OpenWeather (proxied)
+                const res = await fetch(`/api/weather?zip=${zip}`);
+                if (res.ok) {
+                    setZipValid(true);
+                } else {
+                    setZipError("Invalid Zip Code (Not found)");
+                    setZipValid(false);
+                }
+            } catch (err) {
+                console.error("Validation error", err);
+                setZipError("Unable to verify zip");
+            } finally {
+                setVerifyingZip(false);
+            }
+        };
+
+        const timer = setTimeout(checkZip, 500); // 500ms debounce
+        return () => clearTimeout(timer);
+    }, [zip]);
+
 
     const addPlant = (plant: Plant) => {
         if (!selectedPlants.some(p => p.id === plant.id)) {
             setSelectedPlants([...selectedPlants, plant]);
         }
-        setQuery(""); // Clear search after adding
+        setQuery("");
     };
 
     const removePlant = (id: string) => {
@@ -70,6 +118,12 @@ export default function ManualEntryForm({ onConfirm, onCancel }: ManualEntryForm
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!zipValid) {
+            alert("Please provide a valid US Zip Code.");
+            return;
+        }
+
         onConfirm({
             plants: selectedPlants,
             date,
@@ -226,18 +280,31 @@ export default function ManualEntryForm({ onConfirm, onCancel }: ManualEntryForm
                             type="text"
                             placeholder="e.g. 90210"
                             value={zip}
-                            onChange={e => setZip(e.target.value)}
+                            onChange={e => {
+                                const val = e.target.value.replace(/\D/g, '').slice(0, 5); // Enforce numeric only, max 5
+                                setZip(val);
+                            }}
                             style={{
                                 width: "100%",
                                 padding: "0.875rem 1rem 0.875rem 2.5rem",
                                 borderRadius: "8px",
-                                border: "1px solid var(--color-sage-400)",
+                                border: `1px solid ${zipError ? "var(--color-error)" : "var(--color-sage-400)"}`,
                                 fontSize: "1rem",
                                 outline: "none",
                                 backgroundColor: "white"
                             }}
                         />
+                        {/* Loading/Status Indicator */}
+                        <div style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)", fontSize: "0.75rem" }}>
+                            {verifyingZip && <Loader2 className="animate-spin" size={16} color="var(--color-sage-500)" />}
+                            {!verifyingZip && zipValid && <span style={{ color: "green" }}>✓</span>}
+                        </div>
                     </div>
+                    {zipError && (
+                        <p style={{ color: "var(--color-error)", fontSize: "0.75rem", marginTop: "0.25rem", marginLeft: "0.5rem" }}>
+                            {zipError}
+                        </p>
+                    )}
                 </div>
             </div>
 
@@ -249,10 +316,11 @@ export default function ManualEntryForm({ onConfirm, onCancel }: ManualEntryForm
                 <Button
                     type="submit"
                     fullWidth
-                    disabled={selectedPlants.length === 0}
+                    disabled={selectedPlants.length === 0 || !zipValid || verifyingZip}
                     variant="primary"
+                    title={!zipValid ? "Please enter a valid Zip Code" : ""}
                 >
-                    Create Care Schedule ({selectedPlants.length})
+                    {verifyingZip ? "Verifying Location..." : `Create Care Schedule (${selectedPlants.length})`}
                 </Button>
             </div>
         </form>

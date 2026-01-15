@@ -1,27 +1,39 @@
+"use client";
+
 import Link from "next/link";
 import { Sprout } from "lucide-react";
+import { usePathname } from "next/navigation";
 
-export default function Header() {
+interface HeaderProps {
+    title?: string;
+}
+
+export default function Header({ title = "BetterRoots" }: HeaderProps) {
+    const pathname = usePathname();
+    const isHome = pathname === "/";
+
     return (
-        <header className="bg-green-900 text-white px-4 py-3 md:px-8 md:py-4 flex flex-col md:flex-row items-center justify-between border-b-4 border-sage-500 shadow-lg">
-            <Link href="/" className="flex items-center gap-3 no-underline text-white mb-3 md:mb-0 group">
-                <div className="bg-white/10 p-2 rounded-full flex items-center justify-center transition-transform group-hover:scale-105">
-                    <Sprout size={24} color="var(--color-success)" />
+        <header className="w-full py-4 px-6 bg-green-900 text-white shadow-md flex items-center justify-between sticky top-0 z-50">
+            <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+                <div className="bg-white p-1 rounded-full">
+                    <Sprout size={24} className="text-green-900" />
                 </div>
-                <div className="flex flex-col">
-                    <span className="font-serif text-xl md:text-2xl font-bold leading-none">BetterRoots</span>
-                    <span className="text-xs text-sage-400 tracking-wider uppercase">Professional Garden Care</span>
-                </div>
+                <h1 className="font-serif text-xl font-bold tracking-wide">{title}</h1>
             </Link>
 
-            <nav className="flex items-center gap-4 md:gap-8">
-                <Link href="/dashboard" className="text-sage-100 no-underline font-medium text-sm md:text-base hover:text-white transition-colors">
-                    My Garden
-                </Link>
-                <Link href="/intake" className="bg-sage-500 text-white px-4 py-2 rounded-md font-semibold text-sm transition-colors hover:bg-sage-400 no-underline">
-                    Scan Receipt
-                </Link>
-            </nav>
+            {!isHome && (
+                <nav className="flex items-center gap-4 md:gap-8 text-sm font-medium">
+                    <Link href="/intake" className="hover:text-green-200 transition-colors">
+                        Add New Plants
+                    </Link>
+                    <Link href="/dashboard" className="hover:text-green-200 transition-colors">
+                        My Garden
+                    </Link>
+                    <Link href="/feedback" className="hover:text-green-200 transition-colors">
+                        Feedback
+                    </Link>
+                </nav>
+            )}
         </header>
     );
 }

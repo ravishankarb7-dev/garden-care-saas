@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Upload, Loader2, FileImage } from "lucide-react";
-import { mockScanReceipt, ScannedReceiptData } from "@/lib/ocr";
+import { scanReceipt, ScannedReceiptData } from "@/lib/ocr";
 
 interface ReceiptUploaderProps {
     onScanComplete: (data: ScannedReceiptData) => void;
@@ -20,7 +20,7 @@ export default function ReceiptUploader({ onScanComplete }: ReceiptUploaderProps
 
         setIsScanning(true);
         try {
-            const data = await mockScanReceipt(file);
+            const data = await scanReceipt(file);
             onScanComplete(data);
         } catch (error) {
             console.error("Scanning failed", error);

@@ -1,6 +1,6 @@
 import { Plant } from "./types";
 
-export const PLANTS: Plant[] = [
+const BASE_PLANTS: Plant[] = [
     {
         id: "rose-knockout",
         name: "Knock Out® Rose",
@@ -196,6 +196,65 @@ export const PLANTS: Plant[] = [
             { symptom: "Insects on leaves", diagnosis: "Pests", action: "Inspect undersides of leaves." }
         ]
     }
+];
+
+export const PLANTS: Plant[] = [
+    ...BASE_PLANTS,
+    // USER SPECIFIC CATEGORIES ALIASING EXISTING CONTENT
+    {
+        id: "shrub_evergreen",
+        name: "Evergreen Shrubs",
+        botanicalName: "Various",
+        careSchedule: BASE_PLANTS.find(p => p.id === 'evergreen-shrubs')?.careSchedule || [],
+        troubleshooting: BASE_PLANTS.find(p => p.id === 'evergreen-shrubs')?.troubleshooting || []
+    },
+    {
+        id: "shrub_deciduous_flowering",
+        name: "Deciduous Flowering Shrubs",
+        botanicalName: "Various",
+        careSchedule: BASE_PLANTS.find(p => p.id === 'deciduous-flowering-shrubs')?.careSchedule || [],
+        troubleshooting: BASE_PLANTS.find(p => p.id === 'deciduous-flowering-shrubs')?.troubleshooting || []
+    },
+    {
+        id: "plant_annual_flowering",
+        name: "Annual Flowering Plants",
+        botanicalName: "Various",
+        careSchedule: BASE_PLANTS.find(p => p.id === 'annual-flowering-plants')?.careSchedule || [],
+        troubleshooting: BASE_PLANTS.find(p => p.id === 'annual-flowering-plants')?.troubleshooting || []
+    },
+    {
+        id: "plant_perennial_flowering",
+        name: "Perennial Flowering Plants",
+        botanicalName: "Various",
+        careSchedule: BASE_PLANTS.find(p => p.id === 'perennial-flowering-plants')?.careSchedule || [],
+        troubleshooting: BASE_PLANTS.find(p => p.id === 'perennial-flowering-plants')?.troubleshooting || []
+    },
+    {
+        id: "plant_vegetable_start",
+        name: "Vegetable Starts",
+        botanicalName: "Various",
+        careSchedule: BASE_PLANTS.find(p => p.id === 'vegetable-starts')?.careSchedule || [],
+        troubleshooting: BASE_PLANTS.find(p => p.id === 'vegetable-starts')?.troubleshooting || []
+    },
+    // USER SPECIFIC CATEGORIES WITH NO SCHEDULE (YET)
+    { id: "shrub_drought_tolerant", name: "Drought Tolerant Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "shrub_hedge_screening", name: "Hedge & Screening Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "shrub_acid_loving", name: "Acid Loving Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "shrub_native", name: "Native Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "shrub_broadleaf_evergreen", name: "Broadleaf Evergreen Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "shrub_shade", name: "Shade Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "shrub_sun", name: "Sun Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "shrub_foundation", name: "Foundation Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "shrub_mature_transplant", name: "Mature Transplants", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "shrub_container", name: "Container Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "plant_shade", name: "Shade Plants", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "plant_moisture_loving", name: "Moisture Loving Plants", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "plant_drought_tolerant", name: "Drought Tolerant Plants", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "plant_sun", name: "Sun Plants", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "plant_ornamental_grass", name: "Ornamental Grasses", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "plant_groundcover", name: "Groundcover Plants", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "plant_herb_container", name: "Container Herbs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    { id: "plant_herb_inground", name: "Inground Herbs", botanicalName: "Various", careSchedule: [], troubleshooting: [] }
 ];
 
 export function getPlantById(id: string): Plant | undefined {

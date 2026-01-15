@@ -20,7 +20,7 @@ export default function ReceiptLookup({ onLookup }: ReceiptLookupProps) {
     return (
         <div style={{ maxWidth: "450px", margin: "0 auto", textAlign: "center" }}>
             <h2 style={{ fontSize: "1.25rem", marginBottom: "1rem", color: "#374151" }}>
-                Already have a receipt?
+                Load existing garden
             </h2>
             <form onSubmit={handleSubmit} style={{ position: "relative" }}>
                 <Search
@@ -29,7 +29,7 @@ export default function ReceiptLookup({ onLookup }: ReceiptLookupProps) {
                 />
                 <input
                     type="text"
-                    placeholder="Enter Receipt ID (e.g. REC-12345)"
+                    placeholder="Enter Garden Code (e.g. MANUAL-1234)"
                     value={receiptId}
                     onChange={(e) => setReceiptId(e.target.value)}
                     style={{

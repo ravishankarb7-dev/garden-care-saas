@@ -1,36 +1,47 @@
-export type ScannedReceiptData = {
-    receiptId: string;
-    purchaseDate: string; // ISO Date string YYYY-MM-DD
-    storeName: string;
-    detectedPlants: string[]; // List of plant names or SKUs detected
+
+export type ScannedItem = {
+    originalText: string;
+    matchedPlant?: {
+        id: string;
+        name: string;
+    };
 };
 
-export async function mockScanReceipt(file: File): Promise<ScannedReceiptData> {
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+export type ScannedReceiptData = {
+    receiptId: string;
+    purchaseDate: string;
+    storeName: string;
+    items: ScannedItem[];
+};
 
-    // Mock data generation
-    // In a real app, we would send 'file' to an OCR API (e.g. Google Cloud Vision, AWS Textract)
+export async function scanReceipt(file: File): Promise<ScannedReceiptData> {
+    // 1. Convert File to Base64
+    const base64Image = await toBase64(file);
 
-    const today = new Date();
-    const formattedDate = today.toISOString().split('T')[0];
+    // 2. Call API Route
+    const response = await fetch('/api/scan', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ image: base64Image }),
+    });
 
-    const mockPlants = [
-        "Fiddle Leaf Fig",
-        "Snake Plant",
-        "Monstera Deliciosa",
-        "Peace Lily",
-        "ZZ Plant"
-    ];
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to scan receipt");
+    }
 
-    // Pick 1-3 random plants from the list to simulate detection
-    const shuffled = mockPlants.sort(() => 0.5 - Math.random());
-    const detected = shuffled.slice(0, Math.floor(Math.random() * 3) + 1);
+    // 3. Return Data
+    return await response.json();
+}
 
-    return {
-        receiptId: `REC-${Math.floor(100000 + Math.random() * 900000)}`,
-        purchaseDate: formattedDate,
-        storeName: "Green Thumb Garden Center",
-        detectedPlants: detected
-    };
+// Helper to convert File to Base64 Data URL
+function toBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+    });
 }
