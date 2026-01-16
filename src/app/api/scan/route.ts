@@ -3,10 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { PLANTS } from "@/lib/data";
 
-// Initialize OpenAI
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize OpenAI inside handler to avoid build-time errors if key is missing
+// const openai = new OpenAI(...);
 
 export async function POST(req: NextRequest) {
     try {
@@ -20,6 +18,10 @@ export async function POST(req: NextRequest) {
         if (!process.env.OPENAI_API_KEY) {
             return NextResponse.json({ error: "OpenAI API Key not configured" }, { status: 500 });
         }
+
+        const openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+        });
 
         // Call OpenAI Vision
         const response = await openai.chat.completions.create({
