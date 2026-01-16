@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Header from "@/components/Header";
 import { Sprout, Calendar, Droplets, Bug, Leaf, X } from "lucide-react";
 import { Plant } from "@/lib/types";
@@ -14,7 +14,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 
 import { generateGoogleCalendarLink, downloadICS } from "@/lib/calendar";
 
-export default function DashboardPage() {
+
+function DashboardContent() {
     const [myPlants, setMyPlants] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [deviceId, setDeviceId] = useState("");
@@ -377,6 +378,18 @@ export default function DashboardPage() {
                 )}
             </main>
         </div>
+    );
+}
+
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={
+            <div style={{ minHeight: "100vh", backgroundColor: "#F9FAFB", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                <div style={{ width: "2rem", height: "2rem", border: "3px solid var(--color-sage-500)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }}></div>
+            </div>
+        }>
+            <DashboardContent />
+        </Suspense>
     );
 }
 
