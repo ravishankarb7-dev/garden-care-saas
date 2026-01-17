@@ -329,7 +329,7 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
 
                                             {/* SUGGESTIONS DROPDOWN */}
                                             {suggestions.length > 0 && (
-                                                <Card padding="none" className="absolute top-full left-0 right-0 mt-1 z-50 bg-white shadow-xl max-h-60 overflow-y-auto">
+                                                <Card className="absolute top-full left-0 right-0 mt-1 z-50 bg-white shadow-xl max-h-60 overflow-y-auto">
                                                     {suggestions.map(plant => (
                                                         <button
                                                             key={plant.id}
