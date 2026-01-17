@@ -138,7 +138,9 @@ export default function WeatherWidget({ zipCode }: WeatherWidgetProps) {
                     <div className="bg-red-50 border border-red-100 rounded-xl p-3 flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2">
                         <AlertTriangle size={20} className="text-red-500 mt-1 flex-shrink-0" />
                         <div>
-                            <div className="font-bold text-red-900 text-sm mb-1">{priorityEvent.event}</div>
+                            <div className="font-bold text-red-900 text-sm mb-1">
+                                {priorityEvent.event === "Special Weather Statement" ? "Atmospheric Advice" : priorityEvent.event}
+                            </div>
                             <p className="text-red-800 text-xs leading-relaxed line-clamp-3">
                                 {priorityEvent.description || priorityEvent.headline}
                             </p>

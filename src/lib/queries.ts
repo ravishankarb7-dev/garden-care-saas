@@ -153,15 +153,39 @@ export async function createCareSessions(
         window_days: 7 // Default window
     }));
 
-    console.log("Creating sessions payload:", JSON.stringify(sessions, null, 2));
+    // 1. Fetch existing sessions for this device to prevent duplicates
+    const { data: existing } = await supabase
+        .from('care_sessions')
+        .select('care_category_id, planted_at, store_sku_id')
+        .eq('receipt_id', deviceId) as { data: any[] };
+
+    const existingSet = new Set(
+        existing?.map(e => `${e.care_category_id}|${e.store_sku_id || 'null'}`)
+    );
+
+    // 2. Filter out sessions that already exist (Same Plant Type, ANY Date)
+    const newSessions = sessions.filter(s => {
+        const key = `${s.care_category_id}|${s.store_sku_id || 'null'}`;
+        if (existingSet.has(key)) {
+            console.log(`Skipping duplicate (singleton check): ${key}`);
+            return false;
+        }
+        return true;
+    });
+
+    if (newSessions.length === 0) {
+        console.log("All sessions were duplicates.");
+        return true; // Treat as success, just nothing new to add
+    }
+
+    console.log("Creating sessions payload:", JSON.stringify(newSessions, null, 2));
 
     const { error } = await supabase
         .from('care_sessions')
-        .insert(sessions as any);
+        .insert(newSessions as any);
 
     if (error) {
         console.error("Error creating sessions raw:", error);
-        console.error("Error creating sessions stringified:", JSON.stringify(error, null, 2));
         return false;
     }
 

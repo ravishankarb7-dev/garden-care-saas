@@ -1,12 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Plus, X, Sprout, Loader2, Calendar, MapPin } from "lucide-react";
+import { Search, Plus, X, Sprout, Loader2, CalendarIcon, MapPin } from "lucide-react";
 import { Plant } from "@/lib/types";
 import { findMatchingPlants } from "@/lib/match";
 import { getPlants } from "@/lib/queries";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export interface ManualEntryPayload {
     plants: Plant[];
@@ -26,15 +31,9 @@ export default function ManualEntryForm({ onConfirm, onCancel }: ManualEntryForm
     const [suggestions, setSuggestions] = useState<Plant[]>([]);
     const [selectedPlants, setSelectedPlants] = useState<Plant[]>([]);
 
-    // New fields
-    // Use local date YYYY-MM-DD for default
-    const [date, setDate] = useState(() => {
-        const d = new Date();
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    });
+    // Use Date object for Shadcn Calendar
+    const [date, setDate] = useState<Date | undefined>(new Date());
+
     const [zip, setZip] = useState("");
     const [zipValid, setZipValid] = useState(false);
     const [verifyingZip, setVerifyingZip] = useState(false);
@@ -46,7 +45,6 @@ export default function ManualEntryForm({ onConfirm, onCancel }: ManualEntryForm
             try {
                 const plants = await getPlants();
                 // Filter out categories (items without skuId) per user request
-                // We only want specific SKUs to appear in search
                 const onlySkus = plants.filter(p => !!p.skuId);
                 setAllPlants(onlySkus);
             } catch (err) {
@@ -123,206 +121,180 @@ export default function ManualEntryForm({ onConfirm, onCancel }: ManualEntryForm
             alert("Please provide a valid US Zip Code.");
             return;
         }
+        if (!date) {
+            alert("Please provide a planting date.");
+            return;
+        }
 
         onConfirm({
             plants: selectedPlants,
-            date,
+            date: date.toISOString(), // Standardize to ISO
             zip
         });
     };
 
     return (
-        <form onSubmit={handleSubmit} style={{ maxWidth: "600px", margin: "0 auto" }}>
-            <div style={{ marginBottom: "2rem" }}>
-                <h2 style={{ fontSize: "1.75rem", fontFamily: "var(--font-serif)", color: "var(--color-green-900)", marginBottom: "0.5rem" }}>Manual Entry</h2>
-                <p style={{ color: "var(--color-text-muted)" }}>Type the name of your plant (or SKU). We'll help you find the closest match.</p>
-            </div>
-
-            {/* Selected Plants List */}
-            {selectedPlants.length > 0 && (
-                <div style={{ marginBottom: "2rem" }}>
-                    <h3 style={{ fontSize: "0.95rem", fontWeight: 600, marginBottom: "1rem", color: "var(--color-green-900)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        Selected Plants
-                    </h3>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.75rem" }}>
-                        {selectedPlants.map(plant => (
-                            <div key={plant.id} style={{
-                                display: "flex", alignItems: "center", gap: "0.5rem",
-                                padding: "0.5rem 1rem",
-                                backgroundColor: "var(--color-sage-100)",
-                                color: "var(--color-green-900)",
-                                borderRadius: "50px",
-                                border: "1px solid var(--color-sage-400)"
-                            }}>
-                                <Sprout size={16} />
-                                <span style={{ fontWeight: 500 }}>{plant.name}</span>
-                                <button
-                                    type="button"
-                                    onClick={() => removePlant(plant.id)}
-                                    style={{
-                                        border: "none", background: "none", cursor: "pointer",
-                                        color: "var(--color-green-700)", display: "flex", alignItems: "center"
-                                    }}
-                                >
-                                    <X size={14} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Search Input */}
-            <div style={{ position: "relative", marginBottom: "2rem" }}>
-                <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500, color: "var(--color-green-900)" }}>Plant Name or SKU</label>
-                <div style={{ position: "relative" }}>
-                    <Search
-                        size={20}
-                        style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: "var(--color-sage-500)" }}
-                    />
-                    <input
-                        type="text"
-                        placeholder={loading ? "Loading plants..." : "Type plant name (e.g. 'Fidl Lef Fig')"}
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        disabled={loading}
-                        style={{
-                            width: "100%",
-                            padding: "1rem 1rem 1rem 3rem",
-                            borderRadius: "12px",
-                            border: "1px solid var(--color-sage-400)",
-                            fontSize: "1rem",
-                            outline: "none",
-                            boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-                            backgroundColor: "white"
-                        }}
-                    />
-                    {loading && (
-                        <div style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)" }}>
-                            <Loader2 className="animate-spin" size={20} color="var(--color-text-muted)" />
+        <div className="max-w-2xl mx-auto">
+            <Card className="border-0 shadow-none">
+                <CardContent className="p-0">
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                        <div>
+                            <h2 className="text-2xl font-bold tracking-tight text-zinc-900 mb-2">Identify Your Greenery</h2>
+                            <p className="text-zinc-500">Tell us who joined the family, and we’ll handle the homework.</p>
                         </div>
-                    )}
-                </div>
 
-                {/* Suggestions Dropdown */}
-                {suggestions.length > 0 && (
-                    <Card padding="none" style={{
-                        position: "absolute",
-                        top: "100%", left: 0, right: 0,
-                        marginTop: "0.5rem",
-                        zIndex: 10,
-                        backgroundColor: "white"
-                    }}>
-                        {suggestions.map(plant => (
-                            <button
-                                key={plant.id}
-                                type="button"
-                                onClick={() => addPlant(plant)}
-                                style={{
-                                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                                    width: "100%", padding: "1rem",
-                                    border: "none", borderBottom: "1px solid var(--color-bg-cream)",
-                                    background: "white", textAlign: "left", cursor: "pointer",
-                                    transition: "background 0.2s"
-                                }}
-                                onMouseEnter={(e) => e.currentTarget.style.background = "var(--color-bg-cream)"}
-                                onMouseLeave={(e) => e.currentTarget.style.background = "white"}
-                            >
-                                <div>
-                                    <div style={{ fontWeight: 600, color: "var(--color-green-900)" }}>{plant.name}</div>
-                                    {plant.botanicalName && (
-                                        <div style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", fontStyle: "italic" }}>
-                                            {plant.botanicalName}
+                        {/* Selected Plants List */}
+                        {selectedPlants.length > 0 && (
+                            <div className="space-y-3">
+                                <h3 className="text-xs font-semibold text-zinc-500 uppercase tracking-widest">
+                                    Selected Plants
+                                </h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {selectedPlants.map(plant => (
+                                        <div key={plant.id} className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 text-zinc-900 rounded-full border border-zinc-200 text-sm font-medium">
+                                            <Sprout size={14} className="text-primary" />
+                                            <span>{plant.name}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => removePlant(plant.id)}
+                                                className="text-zinc-400 hover:text-red-500 transition-colors"
+                                            >
+                                                <X size={14} />
+                                            </button>
                                         </div>
-                                    )}
+                                    ))}
                                 </div>
-                                <div style={{
-                                    width: "28px", height: "28px",
-                                    borderRadius: "50%", backgroundColor: "var(--color-sage-100)",
-                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                    color: "var(--color-green-700)"
-                                }}>
-                                    <Plus size={18} />
-                                </div>
-                            </button>
-                        ))}
-                    </Card>
-                )}
-            </div>
+                            </div>
+                        )}
 
-            {/* Date and Zip */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "3rem" }}>
-                <div>
-                    <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500, color: "var(--color-green-900)" }}>Planting Date</label>
-                    <div style={{ position: "relative" }}>
-                        <Calendar size={18} style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: "var(--color-sage-500)" }} />
-                        <input
-                            type="date"
-                            value={date}
-                            onChange={e => setDate(e.target.value)}
-                            style={{
-                                width: "100%",
-                                padding: "0.875rem 1rem 0.875rem 2.5rem",
-                                borderRadius: "8px",
-                                border: "1px solid var(--color-sage-400)",
-                                fontSize: "1rem",
-                                outline: "none",
-                                backgroundColor: "white"
-                            }}
-                        />
-                    </div>
-                </div>
-                <div>
-                    <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: 500, color: "var(--color-green-900)" }}>Zip Code</label>
-                    <div style={{ position: "relative" }}>
-                        <MapPin size={18} style={{ position: "absolute", left: "1rem", top: "50%", transform: "translateY(-50%)", color: "var(--color-sage-500)" }} />
-                        <input
-                            type="text"
-                            placeholder="e.g. 90210"
-                            value={zip}
-                            onChange={e => {
-                                const val = e.target.value.replace(/\D/g, '').slice(0, 5); // Enforce numeric only, max 5
-                                setZip(val);
-                            }}
-                            style={{
-                                width: "100%",
-                                padding: "0.875rem 1rem 0.875rem 2.5rem",
-                                borderRadius: "8px",
-                                border: `1px solid ${zipError ? "var(--color-error)" : "var(--color-sage-400)"}`,
-                                fontSize: "1rem",
-                                outline: "none",
-                                backgroundColor: "white"
-                            }}
-                        />
-                        {/* Loading/Status Indicator */}
-                        <div style={{ position: "absolute", right: "1rem", top: "50%", transform: "translateY(-50%)", fontSize: "0.75rem" }}>
-                            {verifyingZip && <Loader2 className="animate-spin" size={16} color="var(--color-sage-500)" />}
-                            {!verifyingZip && zipValid && <span style={{ color: "green" }}>✓</span>}
+                        {/* Search Input */}
+                        <div className="relative">
+                            <label className="block text-sm font-medium text-zinc-700 mb-1.5">Who are we growing?</label>
+                            <div className="relative">
+                                <Search
+                                    size={18}
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
+                                />
+                                <Input
+                                    type="text"
+                                    placeholder={loading ? "Loading plants..." : "e.g. Monstera Deliciosa"}
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    disabled={loading}
+                                    className="pl-10 h-12 text-base"
+                                />
+                                {loading && (
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                        <Loader2 className="animate-spin text-zinc-400" size={18} />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Suggestions Dropdown */}
+                            {suggestions.length > 0 && (
+                                <Card className="absolute top-full left-0 right-0 mt-2 z-10 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="max-h-60 overflow-auto">
+                                        {suggestions.map(plant => (
+                                            <button
+                                                key={plant.id}
+                                                type="button"
+                                                onClick={() => addPlant(plant)}
+                                                className="w-full text-left px-4 py-3 hover:bg-zinc-50 flex items-center justify-between border-b border-zinc-50 last:border-0 transition-colors"
+                                            >
+                                                <div>
+                                                    <div className="font-medium text-zinc-900 text-sm">{plant.name}</div>
+                                                    {plant.botanicalName && (
+                                                        <div className="text-xs text-zinc-500 italic mt-0.5">
+                                                            {plant.botanicalName}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center text-primary group-hover:bg-primary/10">
+                                                    <Plus size={16} />
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </Card>
+                            )}
                         </div>
-                    </div>
-                    {zipError && (
-                        <p style={{ color: "var(--color-error)", fontSize: "0.75rem", marginTop: "0.25rem", marginLeft: "0.5rem" }}>
-                            {zipError}
-                        </p>
-                    )}
-                </div>
-            </div>
 
-            {/* Actions */}
-            <div style={{ display: "flex", gap: "1rem" }}>
-                <Button variant="ghost" type="button" onClick={onCancel}>
-                    Cancel
-                </Button>
-                <Button
-                    type="submit"
-                    fullWidth
-                    disabled={selectedPlants.length === 0 || !zipValid || verifyingZip}
-                    variant="primary"
-                    title={!zipValid ? "Please enter a valid Zip Code" : ""}
-                >
-                    {verifyingZip ? "Verifying Location..." : `Create Care Schedule (${selectedPlants.length})`}
-                </Button>
-            </div>
-        </form>
+                        {/* Date and Zip */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="flex flex-col gap-1.5">
+                                <label className="block text-sm font-medium text-zinc-700">When did they arrive?</label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-full h-12 justify-start text-left font-normal border-zinc-200",
+                                                !date && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4 text-zinc-400" />
+                                            {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={date}
+                                            onSelect={setDate}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5 relative">
+                                <label className="block text-sm font-medium text-zinc-700">Zip Code</label>
+                                <div className="relative">
+                                    <MapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                                    <Input
+                                        type="text"
+                                        placeholder="e.g. 90210"
+                                        value={zip}
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/\D/g, '').slice(0, 5);
+                                            setZip(val);
+                                        }}
+                                        className={cn(
+                                            "pl-10 h-12 text-base",
+                                            zipError && "border-red-500 focus-visible:ring-red-500"
+                                        )}
+                                    />
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm">
+                                        {verifyingZip && <Loader2 className="animate-spin text-zinc-400" size={16} />}
+                                        {!verifyingZip && zipValid && <span className="text-green-600 font-bold">✓</span>}
+                                    </div>
+                                </div>
+                                {zipError && (
+                                    <p className="text-xs text-red-500 ml-1">
+                                        {zipError}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-4 pt-4">
+                            <Button variant="ghost" type="button" onClick={onCancel} className="text-zinc-500">
+                                Cancel
+                            </Button>
+                            <Button
+                                type="submit"
+                                fullWidth
+                                disabled={selectedPlants.length === 0 || !zipValid || verifyingZip}
+                                variant="default" // Primary Emerald
+                                className="h-12 text-base"
+                            >
+                                {verifyingZip ? "Verifying Location..." : `Sow the Schedule (${selectedPlants.length})`}
+                            </Button>
+                        </div>
+                    </form>
+                </CardContent>
+            </Card>
+        </div>
     );
 }

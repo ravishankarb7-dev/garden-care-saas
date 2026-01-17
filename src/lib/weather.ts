@@ -110,3 +110,81 @@ export function mapNWSIconToCode(iconUrl: string): string {
 
     return 'unknown';
 }
+
+const USER_AGENT = '(garden-care-app, contact@example.com)';
+
+export async function getWeatherData(zip: string): Promise<WeatherData> {
+    console.log(`[WeatherLib] Fetching data for zip: ${zip}`);
+
+    // 1. Geocode Zip -> Lat/Lon (Zippopotam - Free)
+    const geoRes = await fetch(`https://api.zippopotam.us/us/${zip}`);
+    if (!geoRes.ok) {
+        throw new Error('Invalid Zip Code');
+    }
+    const geoData: GeoResponse = await geoRes.json();
+
+    if (!geoData.places || geoData.places.length === 0) {
+        throw new Error('Zip code not found');
+    }
+
+    const lat = geoData.places[0].latitude;
+    const lon = geoData.places[0].longitude;
+    const city = geoData.places[0]['place name'];
+
+    console.log(`[WeatherLib] Resolved ${zip} to ${city} (${lat}, ${lon})`);
+
+    // 2. Get NWS Grid Points (Metadata)
+    const pointsRes = await fetch(`https://api.weather.gov/points/${lat},${lon}`, {
+        headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/geo+json' }
+    });
+
+    if (!pointsRes.ok) {
+        throw new Error('Weather unavailable for this location (NWS Points failed)');
+    }
+
+    const pointsData: NWSPointsResponse = await pointsRes.json();
+    const { forecast, gridId, gridX, gridY } = pointsData.properties;
+
+    // 3. Parallel Fetch: Forecast + Alerts
+    const alertsUrl = `https://api.weather.gov/alerts/active?point=${lat},${lon}`;
+
+    const [forecastRes, alertsRes] = await Promise.all([
+        fetch(forecast, { headers: { 'User-Agent': USER_AGENT } }),
+        fetch(alertsUrl, { headers: { 'User-Agent': USER_AGENT } })
+    ]);
+
+    if (!forecastRes.ok) {
+        throw new Error('Forecast unavailable (NWS Forecast failed)');
+    }
+
+    const forecastData: NWSForecastResponse = await forecastRes.json();
+    const currentPeriod = forecastData.properties.periods[0]; // Current timeframe
+
+    // Process Alerts (Graceful degradation if alerts fail)
+    let alerts: any[] = [];
+    if (alertsRes.ok) {
+        const alertsData: NWSAlertsResponse = await alertsRes.json();
+        if (alertsData.features && alertsData.features.length > 0) {
+            alerts = alertsData.features.map(f => ({
+                id: f.id,
+                event: f.properties.event,
+                headline: f.properties.headline,
+                description: f.properties.description,
+                severity: f.properties.severity,
+                urgency: f.properties.urgency,
+                instruction: f.properties.instruction
+            }));
+        }
+    }
+
+    return {
+        temp: currentPeriod.temperature,
+        condition: currentPeriod.shortForecast,
+        description: currentPeriod.detailedForecast,
+        iconCode: mapNWSIconToCode(currentPeriod.icon),
+        humidity: 0,
+        windSpeed: parseInt(currentPeriod.windSpeed.split(' ')[0]) || 0,
+        city: city,
+        alerts: alerts
+    };
+}

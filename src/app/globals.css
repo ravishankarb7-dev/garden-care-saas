@@ -1,96 +1,155 @@
 @import "tailwindcss";
 
-:root {
-  /* Garden Center Professional Palette */
+@plugin "tailwindcss-animate";
 
-  /* Primary: Deep Leaf Green */
-  --color-green-900: #162E20;
-  /* Primary Actions, Active States - "Deep Leaf" */
-  --color-green-800: #1F422E;
-  /* Hover states */
-  --color-green-700: #2E5940;
+@custom-variant dark (&:is(.dark *));
 
-  /* Secondary: Sage / Moss */
-  --color-sage-500: #8DA399;
-  /* Secondary buttons, tags */
-  --color-sage-400: #A3B5AD;
-  --color-sage-100: #E6EBE9;
-  /* Subtle backgrounds */
+@theme {
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
 
-  /* Backgrounds */
-  --color-bg-cream: #F9F8F6;
-  /* Soft warm off-white */
-  --color-bg-white: #FFFFFF;
-  /* Cards, Panels */
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
 
-  /* Text */
-  --color-text-main: #1F2937;
-  /* Dark charcoal */
-  --color-text-muted: #4B5563;
-  /* Muted gray-green */
-  --color-text-light: #F3F4F6;
-  --color-text-inverse: #FFFFFF;
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
 
-  /* Status */
-  --color-success: #86EFAC;
-  /* Soft green */
-  --color-warning: #FCD34D;
-  /* Muted amber */
-  --color-error: #FCA5A5;
-  /* Earthy red (soft) */
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
 
-  /* Glass/Overlay - kept for specific use cases but reduced */
-  --color-glass-dark: rgba(22, 46, 32, 0.85);
-  --color-glass-border: rgba(141, 163, 153, 0.3);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
 
-  /* Spacing Scale (Reference) */
-  --spacing-unit: 4px;
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
 
-  /* Typography */
-  --font-serif: var(--font-playfair);
-  --font-sans: var(--font-inter);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
 }
 
+:root {
+  /* Zinc Palette with Emerald Primary */
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
+  
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 3.9%;
+  
+  /* Emerald-600 for Primary */
+  --primary: 161 94% 30%; /* #059669 */
+  --primary-foreground: 0 0% 98%;
+  
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
+  
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 161 94% 30%;
+  
+  --radius: 0.5rem;
+  
+  --font-sans: var(--font-geist-sans);
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  
+  --primary: 161 94% 30%;
+  --primary-foreground: 0 0% 98%;
+  
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 161 94% 30%;
+}
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  @media (width >= --theme(--breakpoint-sm)) {
+    max-width: none;
+  }
+  @media (width >= --theme(--breakpoint-md)) {
+    max-width: 61rem;
+  }
+  @media (width >= --theme(--breakpoint-lg)) {
+    max-width: 61rem;
+  }
+  @media (width >= --theme(--breakpoint-xl)) {
+    max-width: 61rem;
+  }
+  @media (width >= --theme(--breakpoint-2xl)) {
+    max-width: 1536px;
+  }
+}
+
+/* Base styles */
 * {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+  border-color: var(--border);
 }
 
 body {
-  background-color: var(--color-bg-cream);
-  color: var(--color-text-main);
-  font-family: var(--font-sans), sans-serif;
-  line-height: 1.7;
-  -webkit-font-smoothing: antialiased;
-}
-
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-serif), serif;
-  color: var(--color-green-900);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-}
-
-/* Utility classes for the theme if needed explicitly */
-.text-forest {
-  color: var(--color-green-800);
-}
-
-.text-sage {
-  color: var(--color-sage-400);
-}
-
-.text-terra {
-  color: var(--color-terra-500);
-}
-
-.bg-forest {
-  background-color: var(--color-green-800);
-  color: white;
+  background-color: var(--background);
+  color: var(--foreground);
 }

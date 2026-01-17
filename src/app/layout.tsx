@@ -1,17 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Geist } from "next/font/google"; // Use Geist
 import "./globals.css";
 
-const inter = Inter({
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
-  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -29,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#162E20",
+  themeColor: "#059669", // Emerald 600
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -43,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${playfair.variable} antialiased`} suppressHydrationWarning>
+      <body className={`${geistSans.variable} font-sans antialiased`} suppressHydrationWarning>
         {children}
       </body>
     </html>

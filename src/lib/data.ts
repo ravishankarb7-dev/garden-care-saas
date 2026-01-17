@@ -10,6 +10,8 @@ const BASE_PLANTS: Plant[] = [
             { day: 3, action: "Check Moisture", description: "Stick finger 1 inch into soil. If dry, water again." },
             { day: 7, action: "Mulch", description: "Apply 2-3 inches of mulch to retain moisture." },
             { day: 14, action: "Fertilize", description: "Apply a balanced rose fertilizer." },
+            { day: 21, action: "Stabilization Check", description: "Water deeply if soil is stable. Inspect for early pest pressure." },
+            { day: 28, action: "Establishment Transition", description: "Shift to weather-responsive watering. Avoid overfeeding." },
         ],
         troubleshooting: [
             { symptom: "Yellow Leaves", diagnosis: "Overwatering or Drainage Issue", action: "Check soil moisture. Ensure pot/ground drains well." },
@@ -24,6 +26,8 @@ const BASE_PLANTS: Plant[] = [
             { day: 0, action: "Water", description: "Hydrangeas love water! Soak the root ball." },
             { day: 1, action: "Shade Check", description: "Ensure it gets morning sun but afternoon shade." },
             { day: 3, action: "Water", description: "Keep soil consistently moist, not soggy." },
+            { day: 21, action: "Deep Soak", description: "Ensure deep soil moisture. Hydrangeas struggle with shallow watering." },
+            { day: 28, action: "Monitor", description: "Watch for midday wilt; increase water if persistent." },
         ],
         troubleshooting: [
             { symptom: "Wilting during day", diagnosis: "Heat Stress", action: "Normal in high heat. If it recovers at night, it's fine. If not, water." },
@@ -38,6 +42,8 @@ const BASE_PLANTS: Plant[] = [
             { day: 0, action: "Water", description: "Water in well." },
             { day: 7, action: "Sun Check", description: "Ensure 6+ hours of direct sun." },
             { day: 14, action: "Ignore", description: "Lavender prefers dry feet. Do not overwater." },
+            { day: 21, action: "Drainage Check", description: "Ensure no standing water. Soil should be drying well between drinks." },
+            { day: 28, action: "Minimize Care", description: "Transition to very infrequent watering to harden off." },
         ],
         troubleshooting: [
             { symptom: "Drooping and turning gray", diagnosis: "Root Rot", action: "Stop watering immediately. Improve drainage." },
@@ -51,6 +57,7 @@ const BASE_PLANTS: Plant[] = [
         careSchedule: [
             { day: 0, action: "Sun", description: "Place in bright, indirect light." },
             { day: 14, action: "Water", description: "Water sparingly. Allow soil to dry completely." },
+            { day: 28, action: "Check Light", description: "Ensure plant isn't leaning (seeking light). Rotate if needed." },
         ],
         troubleshooting: [{ symptom: "Soft stem", diagnosis: "Rot", action: "Cut away rot and let callous." }]
     },
@@ -62,6 +69,7 @@ const BASE_PLANTS: Plant[] = [
         careSchedule: [
             { day: 0, action: "Water", description: "Water from bottom to avoid wetting leaves." },
             { day: 4, action: "Light", description: "Needs bright but filtered light." },
+            { day: 21, action: "Fertilize Lightly", description: "Use specialized violet food (1/4 strength) if growing actively." },
         ],
         troubleshooting: [{ symptom: "Spots on leaves", diagnosis: "Cold water damage", action: "Use lukewarm water." }]
     },
@@ -73,6 +81,7 @@ const BASE_PLANTS: Plant[] = [
         careSchedule: [
             { day: 0, action: "Water", description: "Keep soil moist but not soggy." },
             { day: 7, action: "Mist", description: "Mist leaves to increase humidity." },
+            { day: 21, action: "Soil Check", description: "Top inch should be dry before next water." },
         ],
         troubleshooting: [{ symptom: "Brown tips", diagnosis: "Dry air", action: "Mist more often." }]
     },
@@ -83,6 +92,7 @@ const BASE_PLANTS: Plant[] = [
         imageUrl: "/images/aglaonema-siam.png",
         careSchedule: [
             { day: 0, action: "Water", description: "Allow top inch of soil to dry before watering." },
+            { day: 21, action: "Leaf Check", description: "Wipe dust from leaves to support photosynthesis." },
         ],
         troubleshooting: []
     },
@@ -98,6 +108,7 @@ const BASE_PLANTS: Plant[] = [
             { day: 14, action: "Fertilize", description: "Apply balanced liquid fertilizer diluted to 1/2 strength." },
             { day: 21, action: "Pest Control", description: "Inspect underside of leaves for mites." },
             { day: 24, action: "No Water", description: "Explicit dry period. Do not water." },
+            { day: 28, action: "Establishment", description: "Roots should be settling. Water only when top 2 inches dry." },
         ],
         troubleshooting: []
     },
@@ -121,7 +132,9 @@ const BASE_PLANTS: Plant[] = [
             { day: 5, action: "Water", description: "Water deeply if the top inch of soil is dry." },
             { day: 7, action: "Water", description: "Maintain consistent moisture. Mulch helps retain it." },
             { day: 10, action: "Water", description: "Water if no rain has fallen recently." },
-            { day: 14, action: "Weed", description: "Clear any weeds from the base to reduce competition." }
+            { day: 14, action: "Weed", description: "Clear any weeds from the base to reduce competition." },
+            { day: 21, action: "Stabilization", description: "Extend intervals between watering if moisture holds." },
+            { day: 28, action: "Transition", description: "Water only when soil begins to dry at depth." }
         ],
         troubleshooting: [
             { symptom: "Webbing on leaves", diagnosis: "Spider Mites", action: "Watch for mites during hot, dry weather. Spray with water." }
@@ -139,7 +152,9 @@ const BASE_PLANTS: Plant[] = [
             { day: 6, action: "Moisture Check", description: "Dig down 2 inches. If dry, water deeply." },
             { day: 9, action: "Water", description: "Water deeply if rainfall has been scarce." },
             { day: 12, action: "Inspect", description: "Look for yellowing leaves (chlorosis)." },
-            { day: 14, action: "Mulch", description: "Refresh mulch to keep roots cool and moist." }
+            { day: 14, action: "Mulch", description: "Refresh mulch to keep roots cool and moist." },
+            { day: 21, action: "Deep Watering", description: "Water deeply to encourage deep rooting." },
+            { day: 28, action: "Transition", description: "Shift to weather-based monitoring." }
         ],
         troubleshooting: []
     },
@@ -154,7 +169,9 @@ const BASE_PLANTS: Plant[] = [
             { day: 5, action: "Deadhead", description: "Pinch off spent blooms to encourage new flowers." },
             { day: 7, action: "Water", description: "Keep it up! Consistent water equals more flowers." },
             { day: 10, action: "Check", description: "Look for drooping leaves or dry soil surface." },
-            { day: 14, action: "Fertilize", description: "Apply a bloom-booster liquid fertilizer." }
+            { day: 14, action: "Fertilize", description: "Apply a bloom-booster liquid fertilizer." },
+            { day: 21, action: "Pest Check", description: "Check for aphids or slugs. Remove manually." },
+            { day: 28, action: "Monitor", description: "Water according to heat/weather conditions." }
         ],
         troubleshooting: [
             { symptom: "Sticky leaves", diagnosis: "Aphids/Whiteflies", action: "Treat with insecticidal soap." }
@@ -171,7 +188,9 @@ const BASE_PLANTS: Plant[] = [
             { day: 5, action: "Water", description: "Water if the top inch of soil feels dry." },
             { day: 7, action: "Inspect", description: "Check that the plant is standing upright and firm." },
             { day: 10, action: "Water", description: "Deep watering promotes deep roots." },
-            { day: 14, action: "Mulch", description: "Verify mulch layer is suppressing weeds effectively." }
+            { day: 14, action: "Mulch", description: "Verify mulch layer is suppressing weeds effectively." },
+            { day: 21, action: "Growth Check", description: "Look for new leaf emergence." },
+            { day: 28, action: "Establishment", description: "Reduce frequency but water deeply." }
         ],
         troubleshooting: [
             { symptom: "Holes in leaves", diagnosis: "Slugs/Snails", action: "Check in wet conditions." }
@@ -190,12 +209,15 @@ const BASE_PLANTS: Plant[] = [
             { day: 7, action: "Water", description: "Water every other day. Mulch now if you haven't." },
             { day: 9, action: "Water", description: "Check soil; water if top inch is dry." },
             { day: 12, action: "Water", description: "Maintain consistent moisture for fruit set." },
-            { day: 14, action: "Fertilize", description: "Light feeding after Day 14." }
+            { day: 14, action: "Fertilize", description: "Light feeding after Day 14." },
+            { day: 21, action: "Stabilize", description: "Extend watering intervals if soil holds moisture." },
+            { day: 28, action: "Transition", description: "Weather-responsive monitoring. Do not overfeed." }
         ],
         troubleshooting: [
             { symptom: "Insects on leaves", diagnosis: "Pests", action: "Inspect undersides of leaves." }
         ]
     }
+
 ];
 
 export const PLANTS: Plant[] = [

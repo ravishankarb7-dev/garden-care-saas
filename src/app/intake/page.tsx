@@ -11,6 +11,7 @@ import { ArrowLeft, Keyboard } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Plant } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/Card";
 import { getOrCreateDeviceId, saveDeviceId } from "@/lib/device";
 
 export default function IntakePage() {
@@ -32,14 +33,12 @@ export default function IntakePage() {
     const handleConfirm = async (payload: FinalReceiptPayload) => {
         try {
             // Import dynamically
-            const { createCareSessions, getCareSessionsByReceipt } = await import("@/lib/queries");
+            const { createCareSessions } = await import("@/lib/queries");
 
             // 1. Generate receipt ID (Scan based)
             const receiptId = `SCAN-${Date.now().toString().slice(-6)}`;
 
             // 2. Persist to DB
-            // We use the payload.date for planting date
-            // We assume today as planting date if not specified, but payload usually has it
             const success = await createCareSessions(receiptId, payload.selectedPlants, payload.date || new Date().toISOString(), payload.zip, deviceId);
 
             if (!success) {
@@ -89,7 +88,7 @@ export default function IntakePage() {
                 return;
             }
 
-            // Generate a unique transaction ID (mostly for logging or future use, though DB uses deviceId)
+            // Generate a unique transaction ID
             const transactionId = `MANUAL-${Date.now().toString().slice(-6)}`;
             console.log("Creating sessions with transactionId:", transactionId);
 
@@ -142,38 +141,47 @@ export default function IntakePage() {
     };
 
     return (
-        <div className="min-h-screen bg-bg-cream flex flex-col">
+        <div className="min-h-screen bg-background flex flex-col font-sans">
             <Header title="New Plant Care" />
             {/* Debug Info */}
-            <div className="text-xs text-gray-400 text-center py-1">Device ID: {deviceId || "(empty)"}</div>
             {status && <div className="bg-blue-100 text-blue-800 text-center py-2 font-bold">{status}</div>}
 
-            <main className="flex-1 w-full flex flex-col items-center py-8 px-4">
-                <div className="w-full max-w-3xl flex flex-col items-center mt-4">
+            <main className="flex-1 w-full max-w-5xl mx-auto px-6 py-12 flex flex-col items-center">
+                <div className="w-full max-w-2xl flex flex-col gap-8">
                     {step === "SELECT" && (
-                        <div className="flex flex-col w-full gap-24">
-                            {/* 1. Receipt Uploader Section (Top) */}
-                            <section className="w-full bg-white rounded-2xl shadow-sm overflow-hidden">
-                                <ReceiptUploader onScanComplete={handleScanComplete} />
-                            </section>
+                        <div className="flex flex-col gap-8">
+                            {/* 1. Scan / Upload Section */}
+                            <Card className="overflow-hidden border-zinc-200 shadow-sm">
+                                <CardHeader className="bg-zinc-50 border-b border-zinc-100 pb-4">
+                                    <CardTitle className="flex items-center gap-2">
+                                        Scan your receipt
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Upload a photo of your nursery receipt to auto-import plants.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <ReceiptUploader onScanComplete={handleScanComplete} />
+                                </CardContent>
+                            </Card>
 
-                            {/* 2. Manual Entry Button (Middle) */}
-                            <section className="flex flex-col items-center justify-center">
-                                <button
+                            {/* 2. Manual Entry Option */}
+                            <div className="flex justify-center pt-2">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-zinc-500 hover:text-primary hover:bg-zinc-50 font-medium"
                                     onClick={() => setStep("MANUAL")}
-                                    className="inline-flex items-center gap-3 px-8 py-3 rounded-full bg-white border-2 border-green-900 text-green-900 text-lg font-bold hover:bg-green-50 transition-all shadow-sm"
                                 >
-                                    <Keyboard size={24} />
-                                    <span>Enter plants manually</span>
-                                </button>
-                            </section>
+                                    <Keyboard className="mr-2 h-4 w-4" />
+                                    Or enter plants manually
+                                </Button>
+                            </div>
 
-                            {/* 3. Receipt Lookup Section (Bottom) */}
-                            <section className="w-full">
-                                <div className="max-w-md mx-auto">
-                                    <ReceiptLookup onLookup={handleLookup} />
-                                </div>
-                            </section>
+                            {/* 3. Receipt Lookup Section */}
+                            <div className="pt-8">
+                                <ReceiptLookup onLookup={handleLookup} />
+                            </div>
                         </div>
                     )}
 
@@ -182,7 +190,7 @@ export default function IntakePage() {
                             <Button
                                 variant="ghost"
                                 onClick={() => setStep("SELECT")}
-                                className="mb-6 pl-0 hover:bg-transparent hover:text-green-900"
+                                className="mb-6 pl-0 hover:bg-transparent hover:text-primary"
                             >
                                 <ArrowLeft size={18} className="mr-2" /> Back to Upload
                             </Button>
@@ -200,7 +208,7 @@ export default function IntakePage() {
                             <Button
                                 variant="ghost"
                                 onClick={() => setStep("SELECT")}
-                                className="mb-8 pl-0 hover:bg-transparent hover:text-green-900"
+                                className="mb-8 pl-0 hover:bg-transparent hover:text-primary"
                             >
                                 <ArrowLeft size={18} className="mr-2" /> Back to Upload
                             </Button>

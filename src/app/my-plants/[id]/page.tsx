@@ -4,16 +4,30 @@ import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import { useParams } from "next/navigation";
 import { getCareSessionsByReceipt, getPlants } from "@/lib/queries";
-import { Plant } from "@/lib/types";
-import { ArrowLeft, Droplets, Sun, Calendar } from "lucide-react";
+import { Plant, CareTask, TroubleshootingItem } from "@/lib/types";
+import { ArrowLeft, Droplets, Sun, Calendar, AlertTriangle, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { cn } from "@/lib/utils";
+import SmartCareNarrative from "@/components/SmartCareNarrative";
+
+interface PlantDetail {
+    id: string;
+    name: string;
+    botanicalName: string;
+    plantedAt: string;
+    imageUrl?: string;
+    careSchedule: CareTask[];
+    troubleshooting: TroubleshootingItem[];
+}
 
 export default function MyPlantPage() {
     const params = useParams();
     const id = params?.id as string; // The session ID
 
-    const [plant, setPlant] = useState<any>(null);
+    const [plant, setPlant] = useState<PlantDetail | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -37,24 +51,18 @@ export default function MyPlantPage() {
                     return;
                 }
 
-                // Fetch static data for images/schedules
-                // Note: In a real app we might optimize this to fetch just one
                 const staticPlants = await getPlants();
 
-                // Match Logic
                 const categoryData = session.care_category;
                 const skuData = session.store_sku;
 
-                // CRITICAL FIX: Try to find the specific SKU plant first (which has the smart schedule)
                 let matchedPlant = null;
                 if (session.store_sku_id) {
                     matchedPlant = staticPlants.find(p => p.skuId === session.store_sku_id);
                 }
-                // Fallback to searching by Care Category UUID
                 if (!matchedPlant) {
                     matchedPlant = staticPlants.find(p => p.uuid === session.care_category_id && !p.skuId);
                 }
-                // Final fallback
                 if (!matchedPlant) {
                     matchedPlant = staticPlants.find(p => p.uuid === session.care_category_id);
                 }
@@ -65,7 +73,6 @@ export default function MyPlantPage() {
                     botanicalName: matchedPlant?.botanicalName || skuData?.sku,
                     plantedAt: new Date(session.planted_at).toLocaleDateString(),
                     imageUrl: matchedPlant?.imageUrl,
-                    // Use the matched plant's schedule (which should be fuzzy matched now)
                     careSchedule: matchedPlant?.careSchedule || [],
                     troubleshooting: matchedPlant?.troubleshooting || []
                 };
@@ -82,10 +89,10 @@ export default function MyPlantPage() {
 
     if (loading) {
         return (
-            <div style={{ minHeight: "100vh", backgroundColor: "#F9FAFB" }}>
+            <div className="min-h-screen bg-zinc-50 font-sans">
                 <Header />
-                <main style={{ maxWidth: "800px", margin: "0 auto", padding: "3rem" }}>
-                    Loading...
+                <main className="max-w-3xl mx-auto px-6 py-12 flex justify-center">
+                    <div className="w-8 h-8 border-4 border-zinc-200 border-t-primary rounded-full animate-spin"></div>
                 </main>
             </div>
         );
@@ -93,9 +100,9 @@ export default function MyPlantPage() {
 
     if (!plant) {
         return (
-            <div style={{ minHeight: "100vh", backgroundColor: "#F9FAFB" }}>
+            <div className="min-h-screen bg-zinc-50 font-sans">
                 <Header />
-                <main style={{ maxWidth: "800px", margin: "0 auto", padding: "3rem" }}>
+                <main className="max-w-3xl mx-auto px-6 py-12 text-center">
                     Plant not found.
                 </main>
             </div>
@@ -103,48 +110,53 @@ export default function MyPlantPage() {
     }
 
     return (
-        <div style={{ minHeight: "100vh", backgroundColor: "#F9FAFB" }}>
+        <div className="min-h-screen bg-zinc-50 font-sans">
             <Header />
 
-            <main style={{ maxWidth: "800px", margin: "0 auto", padding: "3rem 1.5rem" }}>
-                <Link href="/dashboard" style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "#6B7280", textDecoration: "none", marginBottom: "2rem" }}>
-                    <ArrowLeft size={18} />
+            <main className="max-w-4xl mx-auto px-6 py-12">
+                <Link href="/dashboard" className="inline-flex items-center gap-2 text-zinc-500 hover:text-zinc-900 transition-colors mb-8 font-medium text-sm">
+                    <ArrowLeft size={16} />
                     Back to Garden
                 </Link>
 
-                <div style={{ backgroundColor: "white", borderRadius: "16px", overflow: "hidden", border: "1px solid #E5E7EB" }}>
+                <Card className="overflow-hidden border-zinc-200 shadow-sm mb-8">
                     {/* Header Section */}
-                    <div style={{ padding: "2rem", display: "flex", gap: "2rem", borderBottom: "1px solid #F3F4F6" }}>
-                        <div style={{ width: "100px", height: "100px", borderRadius: "12px", backgroundColor: "#ECFDF5", flexShrink: 0, overflow: "hidden" }}>
+                    <div className="flex flex-col md:flex-row gap-8 p-8 border-b border-zinc-100">
+                        <div className="w-32 h-32 rounded-2xl bg-zinc-100 flex-shrink-0 overflow-hidden shadow-inner">
                             {plant.imageUrl ? (
-                                <img src={plant.imageUrl} alt={plant.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <img src={plant.imageUrl} alt={plant.name} className="w-full h-full object-cover" />
                             ) : null}
                         </div>
                         <div>
-                            <h1 style={{ fontSize: "1.8rem", fontWeight: 700, color: "#111827", margin: "0 0 0.5rem 0" }}>{plant.name}</h1>
-                            <p style={{ color: "#6B7280", fontStyle: "italic", margin: 0 }}>{plant.botanicalName}</p>
-                            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "1rem", color: "#059669", fontSize: "0.9rem", fontWeight: 500 }}>
-                                <Calendar size={16} />
+                            <h1 className="text-3xl font-serif font-bold text-zinc-900 mb-2">{plant.name}</h1>
+                            <p className="text-zinc-500 italic mb-4">{plant.botanicalName}</p>
+                            <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 px-3 py-1.5 rounded-full text-sm font-medium border border-green-100">
+                                <Calendar size={14} />
                                 Planted on {plant.plantedAt}
                             </div>
                         </div>
                     </div>
 
+
                     {/* Care Schedule */}
-                    <div style={{ padding: "2rem" }}>
-                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
-                            <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: "#1F2937", margin: 0 }}>Care Schedule</h2>
+                    <div className="p-8 bg-zinc-50/50">
+                        <div className="mb-8">
+                            <h2 className="text-xl font-bold text-zinc-900 mb-4">Groundskeeper Note</h2>
+                            <SmartCareNarrative plantId={plant.id} zipCode="90210" />
+                        </div>
+
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold text-zinc-900">Nurture Notes</h2>
+
                             {/* Calendar Dropdown */}
-                            <div className="relative group" style={{ zIndex: 50 }}>
-                                <button
-                                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg hover:bg-green-100 transition-colors border border-green-200"
-                                >
-                                    <Calendar size={16} />
-                                    Add to Calendar
-                                </button>
+                            <div className="relative group z-10">
+                                <Button variant="outline" size="sm" className="bg-white hover:bg-zinc-50 border-zinc-200 text-zinc-700">
+                                    <Calendar className="mr-2 h-4 w-4" />
+                                    Sync the Sprout
+                                </Button>
                                 {/* Hover Dropdown */}
-                                <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-xl hidden group-hover:block p-1">
-                                    <div className="px-3 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-zinc-200 rounded-lg shadow-xl hidden group-hover:block p-1 animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="px-3 py-2 text-xs font-bold text-zinc-400 uppercase tracking-wider">
                                         Choose Format
                                     </div>
 
@@ -167,78 +179,20 @@ export default function MyPlantPage() {
                                                 mod.downloadScheduleICS(allEvents, `${plant.name.replace(/\s+/g, '_')}_Full_Schedule.ics`);
                                             });
                                         }}
-                                        className="w-full text-left px-3 py-3 hover:bg-green-50 rounded-md text-gray-700 flex flex-col group/btn"
+                                        className="w-full text-left px-3 py-3 hover:bg-zinc-50 rounded-md text-zinc-700 flex flex-col group/btn transition-colors"
                                     >
-                                        <span className="font-semibold text-green-700 flex items-center justify-between">
+                                        <span className="font-semibold text-zinc-900 flex items-center justify-between">
                                             Download Full Custom Schedule
-                                            <span className="text-[10px] bg-green-100 text-green-800 px-1.5 py-0.5 rounded border border-green-200">Recommended</span>
                                         </span>
-                                        <span className="text-xs text-gray-500 mt-1 leading-snug">
+                                        <span className="text-xs text-zinc-500 mt-1 leading-snug">
                                             Generates a .ics file with the <b>exact</b> {plant.careSchedule.length}-day custom plan.
-                                            <br />
-                                            <span className="opacity-75">Import into Google Calendar, Outlook, or Apple.</span>
-                                        </span>
-                                    </button>
-
-                                    <div className="h-px bg-gray-100 my-1"></div>
-
-                                    <button
-                                        onClick={() => {
-                                            if (!plant) return;
-
-                                            // Analyze schedule for "Water" frequency
-                                            const waterEvents = plant.careSchedule.filter((t: any) => t.action === "Water").sort((a: any, b: any) => a.day - b.day);
-                                            let recurRule = undefined;
-                                            let firstWaterDay = 0;
-
-                                            if (waterEvents.length > 0) {
-                                                firstWaterDay = waterEvents[0].day;
-                                                // Simple heuristic: if day 1 and day 8, it's weekly.
-                                                if (waterEvents.length > 1) {
-                                                    const gap = waterEvents[1].day - waterEvents[0].day;
-                                                    if (gap === 7) recurRule = "RRULE:FREQ=WEEKLY";
-                                                    else if (gap === 14) recurRule = "RRULE:FREQ=WEEKLY;INTERVAL=2";
-                                                    else recurRule = `RRULE:FREQ=DAILY;INTERVAL=${gap}`;
-                                                } else {
-                                                    // Single event? assume weekly default for generic care
-                                                    recurRule = "RRULE:FREQ=WEEKLY";
-                                                }
-                                            }
-
-                                            // Calculate actual start date
-                                            const plantDate = new Date(plant.plantedAt);
-                                            const nextDate = new Date(plantDate);
-                                            nextDate.setDate(plantDate.getDate() + firstWaterDay);
-
-                                            if (nextDate < new Date()) {
-                                                nextDate.setDate(new Date().getDate() + 1);
-                                            }
-
-                                            import("@/lib/calendar").then(mod => {
-                                                const link = mod.generateGoogleCalendarLink({
-                                                    title: `Care for ${plant.name}`,
-                                                    description: `Time to Water, Fertilize, and Check your ${plant.name}.`,
-                                                    start: nextDate,
-                                                    location: "My Garden",
-                                                    recurrence: recurRule
-                                                });
-                                                window.open(link, '_blank');
-                                            });
-                                        }}
-                                        className="w-full text-left px-3 py-3 hover:bg-gray-50 rounded-md text-gray-700 flex flex-col"
-                                    >
-                                        <span className="font-semibold text-gray-900">Google Calendar (Simple)</span>
-                                        <span className="text-xs text-gray-500 mt-1 leading-snug">
-                                            Opens a simple <b>recurring</b> reminder event.
-                                            <br />
-                                            <span className="text-orange-600 font-medium text-[10px]">⚠️ May not match custom schedule changes.</span>
                                         </span>
                                     </button>
                                 </div>
                             </div>
                         </div>
 
-                        <div style={{ display: "grid", gap: "1rem" }}>
+                        <div className="space-y-4">
                             {plant.careSchedule.map((task: any, idx: number) => {
                                 // Calculate the specific date for this task
                                 const plantDate = new Date(plant.plantedAt);
@@ -251,75 +205,90 @@ export default function MyPlantPage() {
                                     taskDate.getMonth() === today.getMonth() &&
                                     taskDate.getFullYear() === today.getFullYear();
 
-                                // Format the date (e.g., "Jan 12")
+                                const isWater = task.action === 'Water';
                                 const dateString = taskDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                                 const displayDate = isToday ? "Today" : dateString;
 
                                 return (
-                                    <div key={idx} style={{
-                                        display: "flex", gap: "1rem",
-                                        padding: "1rem",
-                                        backgroundColor: isToday ? "#ECFDF5" : "#F9FAFB",
-                                        borderRadius: "12px",
-                                        borderLeft: `4px solid ${task.action === 'Water' ? '#3B82F6' : '#10B981'}`,
-                                        border: isToday ? "1px solid #10B981" : "1px solid transparent"
-                                    }}>
-                                        <div style={{ flexShrink: 0, width: "3.5rem", textAlign: "center", fontWeight: isToday ? 700 : 600, color: isToday ? "#059669" : "#374151" }}>
-                                            {displayDate}
-                                            <div style={{ fontSize: "0.75rem", color: "#6B7280", fontWeight: 400 }}>Day {task.day}</div>
+                                    <div key={idx} className={cn(
+                                        "flex gap-4 p-5 rounded-xl border transition-all duration-200 items-start",
+                                        isToday ? "bg-white border-green-500 shadow-md ring-1 ring-green-100" : "bg-white border-zinc-100 shadow-sm card-hover"
+                                    )}>
+                                        <div className={cn(
+                                            "flex-shrink-0 w-16 text-center flex flex-col items-center justify-center p-2 rounded-lg",
+                                            isToday ? "bg-green-50 text-green-700" : "bg-zinc-50 text-zinc-500"
+                                        )}>
+                                            <span className="text-sm font-bold leading-none">{displayDate}</span>
+                                            {!isToday && <span className="text-[10px] uppercase font-medium mt-1">Day {task.day}</span>}
                                         </div>
-                                        <div>
-                                            <div style={{ fontWeight: 600, color: "#111827", marginBottom: "0.25rem" }}>{task.action}</div>
-                                            <div style={{ color: "#4B5563", fontSize: "0.95rem" }}>
-                                                {isToday && task.action === "Water" ? "Water today. " : ""}
-                                                {task.description}
+
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className={cn(
+                                                    "inline-block w-1.5 h-1.5 rounded-full",
+                                                    isWater ? "bg-blue-500" : "bg-green-500"
+                                                )} />
+                                                <h4 className="font-bold text-zinc-900">{task.action}</h4>
                                             </div>
+                                            <p className="text-sm text-zinc-600 leading-relaxed">
+                                                {isToday && isWater ? "Water today. " : ""}
+                                                {task.description}
+                                            </p>
                                         </div>
+
+                                        {/* Status Icon/Accent (subtle right side visual) */}
+                                        <div className={cn(
+                                            "w-1 self-stretch rounded-full",
+                                            isWater ? "bg-blue-100" : "bg-green-100"
+                                        )} />
                                     </div>
                                 );
                             })}
                             {plant.careSchedule.length === 0 && (
-                                <p style={{ color: "#6B7280" }}>No specific care schedule active for this plant type yet.</p>
+                                <p className="text-zinc-500 italic">No specific care schedule active for this plant type yet.</p>
                             )}
                         </div>
                     </div>
 
                     {/* Troubleshooting */}
                     {plant.troubleshooting.length > 0 && (
-                        <div style={{ padding: "2rem", borderTop: "1px solid #F3F4F6" }}>
-                            <h2 style={{ fontSize: "1.25rem", fontWeight: 600, marginBottom: "1.5rem", color: "#1F2937" }}>Troubleshooting</h2>
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                        <div className="p-8 border-t border-zinc-100">
+                            <h2 className="text-xl font-bold text-zinc-900 mb-6">Troubleshooting</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {plant.troubleshooting.map((item: any, idx: number) => (
-                                    <div key={idx} style={{ padding: "1rem", border: "1px solid #E5E7EB", borderRadius: "8px" }}>
-                                        <div style={{ fontWeight: 600, color: "#EF4444", marginBottom: "0.5rem" }}>{item.symptom}</div>
-                                        <div style={{ fontSize: "0.9rem", color: "#374151" }}>Try: {item.action}</div>
+                                    <div key={idx} className="p-4 border border-zinc-200 rounded-xl bg-zinc-50/50">
+                                        <div className="font-bold text-red-500 mb-1 flex items-center gap-2">
+                                            <AlertTriangle size={16} />
+                                            {item.symptom}
+                                        </div>
+                                        <div className="text-sm text-zinc-600">Try: {item.action}</div>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
+                </Card>
 
-                    {/* Danger Zone */}
-                    <div style={{ padding: "2rem", backgroundColor: "#FEF2F2", borderTop: "1px solid #FEE2E2" }}>
-                        <button
-                            onClick={async () => {
-                                if (confirm("Are you sure you want to remove this plant from your garden? This cannot be undone.")) {
-                                    const { deleteCareSession } = await import("@/lib/queries");
-                                    const success = await deleteCareSession(plant.id);
-                                    if (success) {
-                                        window.location.href = "/dashboard";
-                                    } else {
-                                        alert("Failed to delete plant. Please try again.");
-                                    }
+                {/* Danger Zone */}
+                <div className="flex justify-end">
+                    <Button
+                        variant="ghost"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        onClick={async () => {
+                            if (confirm("Are you sure you want to remove this plant from your garden? This cannot be undone.")) {
+                                const { deleteCareSession } = await import("@/lib/queries");
+                                const success = await deleteCareSession(plant.id);
+                                if (success) {
+                                    window.location.href = "/dashboard";
+                                } else {
+                                    alert("Failed to delete plant. Please try again.");
                                 }
-                            }}
-                            style={{
-                                backgroundColor: "white", color: "#DC2626", border: "1px solid #DC2626",
-                                padding: "0.75rem 1.5rem", borderRadius: "8px", fontWeight: 600, cursor: "pointer"
-                            }}>
-                            Remove Plant
-                        </button>
-                    </div>
+                            }
+                        }}
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Remove Plant from Garden
+                    </Button>
                 </div>
             </main>
         </div>
