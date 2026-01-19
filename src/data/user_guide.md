@@ -1,7 +1,7 @@
-# BetterRoots User Guide & Knowledge Base
+# Garden Care User Guide & Knowledge Base
 
-## 1. Introduction: The BetterRoots Philosophy
-Welcome to **BetterRoots**. Our mission is simple: **Stop plants from dying in the first 28 days.**
+## 1. Introduction: The Garden Care Philosophy
+Welcome to **Garden Care**. Our mission is simple: **Stop plants from dying in the first 28 days.**
 Most plant failures happen because of "transplant shock" or improper stabilization. We don't just give you a generic calendar; we give you a **survival plan** adapted to your local weather.
 
 ---
@@ -104,3 +104,16 @@ Plants talk, but sometimes they mumble. Here is how to translate their language 
 *   **The "Mushy" Stem**: Stems turning black, soft, or smelly at the base. (Root Rot / Overwatering).
 *   **Sudden Collapse**: The entire plant falls over flat despite being watered. (Stem failure).
 *   **Webs or Stickiness**: Fine webbing (Spider Mites) or sticky residue on leaves (Aphids/Scale).
+
+---
+
+## 9. The Trophy Shed (Gamification)
+Your gardening progress is tracked in your **Profile (Trophy Shed)**.
+- **XP (Experience Points)**: Earn XP by adding plants, maintaining streaks, and logging care.
+- **Levels**: Grow from a "Seedling" (Lvl 1) to a "Master Groundskeeper" (Lvl 5).
+- **Streaks**: Maintain a daily care streak to earn bonus badges.
+- **Badges**: Unlock special achievements like:
+    -   **First Bloomer**: Adding your first plant.
+    -   **The Journalist**: Writing detailed care notes.
+    -   **Survivor**: Keeping a plant alive for 28+ days.
+

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "BetterRoots",
+    title: "Garden Care",
     statusBarStyle: "default",
   },
   formatDetection: {
