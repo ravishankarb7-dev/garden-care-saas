@@ -143,7 +143,7 @@ export default function MyPlantPage() {
                     <div className="p-8 bg-zinc-50/50">
                         <div className="mb-8">
                             <h2 className="text-xl font-bold text-zinc-900 mb-4">Groundskeeper Note</h2>
-                            <SmartCareNarrative plantId={plant.id} zipCode="90210" />
+                            <SmartCareNarrative plantId={plant.id} plantName={plant.name} zipCode="90210" />
                         </div>
 
                         <div className="flex items-center justify-between mb-6">
