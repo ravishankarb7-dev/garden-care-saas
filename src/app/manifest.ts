@@ -2,8 +2,8 @@ import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: 'BetterRoots Garden Care',
-        short_name: 'BetterRoots',
+        name: 'RootCause Garden Care',
+        short_name: 'RootCause',
         description: 'Expert plant care schedules and weather alerts.',
         start_url: '/',
         display: 'standalone',

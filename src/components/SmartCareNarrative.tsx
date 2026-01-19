@@ -6,11 +6,13 @@ import { cn } from "@/lib/utils";
 
 interface SmartCareNarrativeProps {
     plantId: string;
+    plantName: string;
     zipCode: string;
     className?: string;
+    onRiskChange?: (shouldDisable: boolean) => void;
 }
 
-export default function SmartCareNarrative({ plantId, zipCode, className }: SmartCareNarrativeProps) {
+export default function SmartCareNarrative({ plantId, plantName, zipCode, className, onRiskChange }: SmartCareNarrativeProps) {
     const [narrative, setNarrative] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -25,12 +27,20 @@ export default function SmartCareNarrative({ plantId, zipCode, className }: Smar
                 const res = await fetch('/api/agent/care', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ plantId, zip: zipCode })
+                    body: JSON.stringify({ plantId, plantName, zip: zipCode })
                 });
 
                 if (res.ok) {
                     const data = await res.json();
-                    if (mounted) setNarrative(data.narrative);
+                    if (mounted) {
+                        setNarrative(data.narrative);
+                        // Notify parent if Action says POSTPONE
+                        if (onRiskChange && data.action === 'POSTPONE') {
+                            onRiskChange(true);
+                        } else if (onRiskChange) {
+                            onRiskChange(false);
+                        }
+                    }
                 }
             } catch (err) {
                 console.error("Failed to load smart care", err);

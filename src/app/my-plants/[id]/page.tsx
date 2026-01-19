@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
 import SmartCareNarrative from "@/components/SmartCareNarrative";
+import CareCheckIn from "@/components/CareCheckIn";
 
 interface PlantDetail {
     id: string;
@@ -211,36 +212,47 @@ export default function MyPlantPage() {
 
                                 return (
                                     <div key={idx} className={cn(
-                                        "flex gap-4 p-5 rounded-xl border transition-all duration-200 items-start",
+                                        "flex flex-col gap-4 p-5 rounded-xl border transition-all duration-200",
                                         isToday ? "bg-white border-green-500 shadow-md ring-1 ring-green-100" : "bg-white border-zinc-100 shadow-sm card-hover"
                                     )}>
-                                        <div className={cn(
-                                            "flex-shrink-0 w-16 text-center flex flex-col items-center justify-center p-2 rounded-lg",
-                                            isToday ? "bg-green-50 text-green-700" : "bg-zinc-50 text-zinc-500"
-                                        )}>
-                                            <span className="text-sm font-bold leading-none">{displayDate}</span>
-                                            {!isToday && <span className="text-[10px] uppercase font-medium mt-1">Day {task.day}</span>}
-                                        </div>
-
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className={cn(
-                                                    "inline-block w-1.5 h-1.5 rounded-full",
-                                                    isWater ? "bg-blue-500" : "bg-green-500"
-                                                )} />
-                                                <h4 className="font-bold text-zinc-900">{task.action}</h4>
+                                        <div className="flex gap-4 items-start">
+                                            <div className={cn(
+                                                "flex-shrink-0 w-16 text-center flex flex-col items-center justify-center p-2 rounded-lg",
+                                                isToday ? "bg-green-50 text-green-700" : "bg-zinc-50 text-zinc-500"
+                                            )}>
+                                                <span className="text-sm font-bold leading-none">{displayDate}</span>
+                                                {!isToday && <span className="text-[10px] uppercase font-medium mt-1">Day {task.day}</span>}
                                             </div>
-                                            <p className="text-sm text-zinc-600 leading-relaxed">
-                                                {isToday && isWater ? "Water today. " : ""}
-                                                {task.description}
-                                            </p>
+
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className={cn(
+                                                        "inline-block w-1.5 h-1.5 rounded-full",
+                                                        isWater ? "bg-blue-500" : "bg-green-500"
+                                                    )} />
+                                                    <h4 className="font-bold text-zinc-900">{task.action}</h4>
+                                                </div>
+                                                <p className="text-sm text-zinc-600 leading-relaxed">
+                                                    {isToday && isWater ? "Water today. " : ""}
+                                                    {task.description}
+                                                </p>
+                                            </div>
+
+                                            {/* Status Icon/Accent (subtle right side visual) */}
+                                            <div className={cn(
+                                                "w-1 self-stretch rounded-full",
+                                                isWater ? "bg-blue-100" : "bg-green-100"
+                                            )} />
                                         </div>
 
-                                        {/* Status Icon/Accent (subtle right side visual) */}
-                                        <div className={cn(
-                                            "w-1 self-stretch rounded-full",
-                                            isWater ? "bg-blue-100" : "bg-green-100"
-                                        )} />
+                                        {/* Check-in UI */}
+                                        <div className="border-t border-zinc-100 pt-3 mt-1">
+                                            <CareCheckIn
+                                                sessionId={plant.id}
+                                                action={task.action}
+                                                date={taskDate.toISOString().split('T')[0]} // YYYY-MM-DD
+                                            />
+                                        </div>
                                     </div>
                                 );
                             })}

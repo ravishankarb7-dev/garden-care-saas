@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Header from "@/components/Header";
-import { Sprout, Calendar, MessageSquarePlus } from "lucide-react";
+import { Sprout, Calendar, Trophy } from "lucide-react";
 
 export default function Home() {
   return (
@@ -57,20 +57,20 @@ export default function Home() {
             </div>
           </Link>
 
-          {/* Card 3: Feedback */}
-          <Link href="/feedback" className="group no-underline w-full">
+          {/* Card 3: Trophy Shed */}
+          <Link href="/profile" className="group no-underline w-full">
             <div className="h-full bg-white p-10 rounded-3xl shadow-lg border border-sage-100 hover:shadow-2xl hover:border-green-300 transition-all duration-300 transform hover:-translate-y-2 flex flex-col items-center text-center">
               <div className="w-24 h-24 bg-amber-50 rounded-full flex items-center justify-center mb-8 group-hover:bg-amber-100 transition-colors">
-                <MessageSquarePlus size={48} className="text-amber-700" strokeWidth={1.5} />
+                <Trophy size={48} className="text-amber-600" strokeWidth={1.5} />
               </div>
-              <h2 className="text-2xl font-bold font-serif text-green-900 mb-4 group-hover:text-green-700 transition-colors">
-                Petals & Prickles
+              <h2 className="text-2xl font-bold font-serif text-green-900 mb-4 group-hover:text-amber-600 transition-colors">
+                Trophy Shed
               </h2>
               <p className="text-gray-500 leading-relaxed mb-6">
-                Tell us what’s blooming or where we’re bugging you.
+                View your achievements, badges, and gardening stats.
               </p>
               <span className="mt-auto text-sm font-bold tracking-widest uppercase text-green-800 border-b border-green-200 pb-1 group-hover:border-green-600 transition-colors">
-                Share Thoughts
+                View Profile
               </span>
             </div>
           </Link>

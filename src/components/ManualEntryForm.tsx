@@ -192,7 +192,7 @@ export default function ManualEntryForm({ onConfirm, onCancel }: ManualEntryForm
 
                             {/* Suggestions Dropdown */}
                             {suggestions.length > 0 && (
-                                <Card className="absolute top-full left-0 right-0 mt-2 z-10 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                <Card className="absolute top-full left-0 right-0 mt-2 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200 bg-white shadow-xl border border-zinc-200">
                                     <div className="max-h-60 overflow-auto">
                                         {suggestions.map(plant => (
                                             <button

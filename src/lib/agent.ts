@@ -6,14 +6,21 @@ import { getCareGuideContent, getGlobalGuideContent } from "./pdf";
 // Initialize OpenAI client
 // Note: This must only be called server-side
 
-export async function generateCareNarrative(plant: Plant, weather: WeatherData): Promise<string> {
+// Define the structured response type
+export interface AgentResponse {
+    narrative: string;
+    riskLevel: 'HIGH' | 'LOW' | 'NONE';
+    action: 'POSTPONE' | 'PROCEED';
+}
+
+export async function generateCareNarrative(plant: Plant, weather: WeatherData): Promise<AgentResponse> {
     try {
         const openai = new OpenAI({
             apiKey: process.env.OPENAI_API_KEY,
         });
 
         // 1. Get Knowledge Base Layers
-        const specificGuideText = await getCareGuideContent(plant.id);
+        const specificGuideText = await getCareGuideContent(plant.id, plant.name);
         const globalGuideText = await getGlobalGuideContent();
 
         // 2. Format Context
@@ -30,53 +37,55 @@ export async function generateCareNarrative(plant: Plant, weather: WeatherData):
             Alerts: ${weather.alerts.length > 0 ? weather.alerts.map(a => a.event).join(", ") : "None"}
         `;
 
-        // 3. Construct System Prompt using the "Petals & Prickles" Persona
+        // 3. Construct System Prompt
         const systemPrompt = `
-        You are "Petals & Prickles," a witty, pragmatic, and expert groundskeeper. 
-        Your job is to write a SHORT, 2-sentence "Smart Care Note" for the user's plant.
+        You are "Petals & Prickles," a pragmatic groundskeeper.
         
-        KNOWLEDGE BASE HIERARCHY:
-        1. **LAYER 1: GLOBAL STABILIZATION PROTOCOL (SURVIVAL FIREWALL)**
-           *Universal constraints that apply to ALL plants (e.g., frozen soil).*
-           ${globalGuideText ? globalGuideText.slice(0, 3000) : "No Global Protocol Available."}
+        KNOWLEDGE BASE:
+        1. GLOBAL RULES: ${globalGuideText ? globalGuideText.slice(0, 1500) : "No Global Protocol."}
+        2. PLANT RULES: ${specificGuideText ? specificGuideText.slice(0, 1500) : "No Specific Guide."}
 
-        2. **LAYER 2: PLANT SPECIFIC KNOWLEDGE (SPECIFIC FIREWALL & OPTIMIZATION)**
-           *Specific constraints for THIS plant type. These are EQUALLY CRITICAL.*
-           *EXAMPLE: "Vegetables die below 50°F" is a Layer 2 rule that overrides a "Sunny 45°F" forecast.*
-           ${specificGuideText ? specificGuideText.slice(0, 3000) : "No Specific Guide Available."}
+        TASK:
+        Analyze conditions for this plant. Return a JSON object:
+        {
+            "narrative": "A short, 2-sentence care note.",
+            "riskLevel": "HIGH" | "LOW" | "NONE",
+            "action": "POSTPONE" | "PROCEED" 
+        }
 
-        CORE RULES:
-        1. **SCAN FOR DANGER (Layers 1 & 2)**: 
-           - **Step A**: Check Layer 1 (Global) for hazards (Freeze, Drought, etc).
-           - **Step B**: Check Layer 2 (Specific) for *specific* hazards. 
-             - *Does the guide say "Warm Season"? If yes, <60°F (consistent) is FATAL. Do not plant in Winter.*
-             - *Does the guide say "Shade Only"? If yes, Direct Sun is FATAL.*
-           - If ANY Danger Rule (Layer 1 or 2) is triggered, ISSSUE A WARNING. Do not optimize.
-
-        2. **THEN OPTIMIZE**: Only if Step A & B represent "Safe" conditions, proceed to growth tips.
-        3. **Tone**: Helpful, authoritative. If unsafe, be direct: "It is too cold for this plant."
-        4. **Length**: MAXIMUM 2 sentences. 40 words max.
+        LOGIC:
+        - If conditions are UNSAFE (Freeze, Heat Stress, Wrong Season), set "riskLevel": "HIGH" and "action": "POSTPONE".
+        - Narrative should be direct: "It is too cold. Do not plant."
+        - If SAFE, set "action": "PROCEED" and give care tips.
         `;
 
-
-        // 4. Call LLM
+        // 4. Call LLM with JSON Mode
         const response = await openai.chat.completions.create({
             model: "gpt-4o",
             messages: [
                 { role: "system", content: systemPrompt },
                 {
                     role: "user",
-                    content: `Analyze this plant against the weather:\n\nPLANT:\n${plantContext}\n\nWEATHER:\n${weatherContext}`
+                    content: `Analyze:\nPLAINT: ${plantContext}\nWEATHER: ${weatherContext}`
                 }
             ],
-            temperature: 0.7,
-            max_tokens: 100,
+            response_format: { type: "json_object" },
+            temperature: 0.5,
+            max_tokens: 150,
         });
 
-        return response.choices[0].message.content || "Keep an eye on the soil moisture today.";
+        const content = response.choices[0].message.content;
+        if (!content) throw new Error("Empty response");
+
+        return JSON.parse(content) as AgentResponse;
 
     } catch (error) {
         console.error("[Agent] Failed to generate narrative:", error);
-        return "Nature is unpredictable, but keep your soil moisture consistent.";
+        // Safe fallback
+        return {
+            narrative: "Nature is unpredictable. Check soil moisture manually.",
+            riskLevel: "LOW",
+            action: "PROCEED"
+        };
     }
 }

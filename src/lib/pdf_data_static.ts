@@ -1,58 +1,45 @@
 export const PDF_STATIC_DATA: Record<string, string> = {
     "28_Day_Stabilization_Primary_Advisory_v2.pdf": `
-28-Day Plant Stabilization Schedule (Primary Advisory)
-Purpose: This document defines the survival-critical and establishment-critical care logic for the first 28 days
-after purchase or planting. It is designed as a conservative, agent-readable reference. Category-specific PDFs
-provide additional nuance but must not contradict this baseline.
-Global Guardrails (Always Enforced – P1)
-1 Plant only when soil is workable (not frozen, not waterlogged).
-2 Water based on soil/root-zone moisture, not on the calendar.
-3 Avoid quick-release fertilizer at planting or during heat/drought stress.
-4 Pause irrigation after heavy rain; standing water beyond ~24 hours is a drainage failure.
-5 If advice conflicts: survival rules override optimization advice.
-Day 0 (Planting Day) – P1
-1 Plant at correct depth (root flare or crown at soil surface unless species-specific guidance says otherwise).
-2 Eliminate air pockets; ensure firm soil-root contact.
-3 Water in thoroughly until the entire root ball and surrounding soil are saturated.
-4 Apply mulch 2–3 inches deep where appropriate; keep mulch off stems/crowns.
-5 Do NOT fertilize at planting unless a labeled starter solution is explicitly recommended.
-Days 1–7 (Acute Establishment Window) – P1
-1 Check soil moisture daily; water deeply whenever the root zone begins to dry.
-2 Containers may require multiple moisture checks per day in heat or wind.
-3 Avoid shallow, frequent sprinkling; water at the base.
-4 Provide temporary shade or wind protection if plants wilt during extreme conditions.
-5 Do not prune except for dead or broken tissue.
-Days 8–14 (Early Root Expansion) – P1 / P2
-1 Continue frequent moisture checks; many plants still require daily or every-other-day watering.
-2 Allow slight surface drying between waterings, but never allow the root ball to dry out.
-3 Inspect for early pest pressure (aphids, mites, slugs); intervene conservatively.
-4 Avoid fertilizing unless plants are actively growing AND soil/media was not pre-fertilized.
-Days 15–21 (Stabilization Phase) – P2
-1 Begin extending time between waterings if soil moisture remains stable.
-2 Water deeply; avoid reverting to shallow watering.
-3 Light, dilute feeding may be considered ONLY if growth is active and conditions are mild.
-4 Continue weed suppression to reduce competition for water.
-Days 22–28 (Transition to Establishment) – P2
-1 Shift from daily checks to weather-responsive monitoring.
-2 Water when soil begins to dry at depth; avoid calendar-only schedules.
-3 Do not increase fertilizer rates; overfeeding during early establishment causes long-term stress.
-4 Remove temporary supports/shade gradually if used.
-Weather & Seasonal Overrides (Always P1)
-1 Heat waves: increase watering frequency; provide temporary shade; suspend fertilization.
-2 Cold snaps/frost: protect tender plants; water beforehand only if soil is dry and above freezing.
-3 Heavy rain: stop irrigation; ensure drainage; pull mulch back if soil remains wet.
-4 Winter dry periods (evergreens): water on mild days if soil is not frozen.
-Failure Signals vs Normal Adjustment – P1
-1 Normal: mild wilting immediately after planting that recovers after watering; temporary leaf drop.
-2 Warning: persistent wilt with wet soil, stem collapse, progressive browning or blackening.
-3 Action: treat wet-soil wilt as drainage failure, not drought.
-Operationalization Notes (For Product Implementation)
-1 Add machine-readable tokens (e.g., DAY_RANGE, PRIORITY, OVERRIDE_TYPE) to each rule for
-deterministic parsing.
-2 Map this baseline directly to rule objects; category-specific logic may narrow but must not violate P1
-guardrails.
-3 Validate this baseline with extension faculty before locking v1 as a source-of-truth artifact.
-End of primary stabilization window. After Day 28, transition to category-specific guidance and long-term care rules.
+28-Day Plant Stabilization Schedule
+Purpose: Canonical survival and establishment guidance for the first 28 days after planting. This document is agent-readable and conservative by design.
+
+I. Global Guardrails (Always Enforced - P1)
+• Workability: Plant only when soil is workable; do not plant in frozen or waterlogged soil.
+• Moisture-Driven: All watering decisions must be based on actual root-zone moisture; calendar dates are advisory only.
+• Fertilizer Safety: Avoid quick-release fertilizer at planting or during heat, drought, or dormancy.
+• Preventing Burn: Never apply fertilizer to dry soil; always water the plant first.
+• Drainage Check: Pause irrigation after heavy rain; standing water beyond 24 hours indicates a drainage failure.
+• Container Care: Never allow containers to sit in standing water/saucers.
+• Conflict Resolution: If advice conflicts, survival rules (P1) always override optimization guidance.
+
+II. Language & Season Sensitivity (Global - P1)
+• Winter Dormancy: For deciduous plants in winter, use "dormant establishment" rather than "active growth".
+• Evergreen Monitoring: Evergreens in winter require moisture monitoring during dry spells even if they appear static.
+• Warm-Season Thresholds: Warm-season crops (tomatoes, peppers, basil) must not be planted or described as "ready to grow" until soil temperatures reach >=60°F (16°C).
+
+III. Day 0: Planting Day (P1)
+• Correct Depth: Plant at the same depth as the container; ensure the root flare or crown is at the soil surface.
+• Root Protection: Never bury the crown of a perennial or the trunk/stem base of a shrub.
+• Soil Contact: Eliminate air pockets by firming soil around the roots.
+• Initial Saturation: Water in thoroughly until the root ball and surrounding soil are fully saturated.
+• Mulching Technique: Apply mulch 2-3 inches deep, but keep it 2-3 inches away from stems and crowns to prevent rot.
+
+IV. Days 1-7: Acute Establishment (P1)
+• Daily Checks: Inspect soil moisture daily; water deeply whenever the root zone begins to dry.
+• Watering Technique: Water at the base only; avoid routine overhead watering or wetting foliage late in the day to reduce disease.
+• Stress Protection: Provide temporary shade or wind protection if plants wilt during extreme heat or drying winds.
+• Minimal Intervention: Do not prune except for dead or broken tissue; avoid "shaping" immediately after planting.
+
+V. Days 8-28: Stabilization & Transition (P1/P2)
+• Days 8-14: Allow slight surface drying between waterings; recognize that lack of visible growth is normal during dormancy.
+• Days 15-21: Gradually extend the time between waterings as soil moisture stabilizes.
+• Days 22-28: Shift from daily checks to weather-responsive monitoring.
+• Fertilization: Only consider light, dilute feeding if the plant is in an active growth period and conditions are mild.
+
+VI. Failure Signals vs. Normal Adjustment (P1)
+• Normal: Temporary wilt immediately after planting that recovers after watering.
+• Warning: Persistent wilt even when soil is wet, stem collapse, or progressive browning/blackening of tissue.
+• Response: Treat wet-soil wilt as a drainage problem, not a watering deficit.
 `
     ,
     "Vegetable_Starts_Agent_Grade_Priority.pdf": `

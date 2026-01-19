@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google"; // Use Geist
 import "./globals.css";
+import ChatAssistant from "@/components/ChatAssistant";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -8,9 +9,10 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "BetterRoots | Garden Care SaaS",
-  description: "Foolproof plant care schedules adapted to your local weather.",
-  applicationName: "BetterRoots",
+  title: "RootCause | A cause worth fighting for",
+  description: "Stop plants from dying in the first 28 days.",
+  applicationName: "RootCause",
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     title: "BetterRoots",
@@ -38,6 +40,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} font-sans antialiased`} suppressHydrationWarning>
         {children}
+        <ChatAssistant />
       </body>
     </html>
   );

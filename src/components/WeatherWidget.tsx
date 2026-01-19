@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CloudRain, Sun, Cloud, CloudSnow, CloudFog, CloudLightning, Wind, Thermometer, Loader2, AlertTriangle, CloudSun } from "lucide-react";
 import { WeatherData, WeatherAlert } from "@/lib/weather";
+import { getGardeningContext, GardeningContext } from "@/lib/weather_context";
 
 interface WeatherWidgetProps {
     zipCode: string;
@@ -13,7 +14,20 @@ export default function WeatherWidget({ zipCode }: WeatherWidgetProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    // Mapping icons from our NWS helper "iconCode" to Lucide
+    // Memoize context based on weather state
+    const context: GardeningContext | null = weather ? getGardeningContext(weather) : null;
+
+    const getContextColors = (type: string) => {
+        switch (type) {
+            case 'error': return 'bg-red-50 border-red-100 text-red-900';
+            case 'warning': return 'bg-orange-50 border-orange-100 text-orange-900';
+            case 'info': return 'bg-blue-50 border-blue-100 text-blue-900';
+            case 'success': return 'bg-green-50 border-green-100 text-green-900';
+            default: return 'bg-gray-50 border-gray-100 text-gray-900';
+        }
+    };
+
+    const colors = context ? getContextColors(context.type) : '';
     const getIcon = (code: string) => {
         switch (code) {
             case 'rain': return <CloudRain size={32} className="text-blue-500" />;
@@ -97,12 +111,7 @@ export default function WeatherWidget({ zipCode }: WeatherWidgetProps) {
 
     if (!weather) return null;
 
-    // Prioritize Alerts
-    const hasAlerts = weather.alerts && weather.alerts.length > 0;
-    const priorityEvent = hasAlerts ? weather.alerts[0] : null;
 
-    // Is it bad weather? (Rain, Snow, Extreme Heat/Cold logic could go here)
-    const isRainy = weather.iconCode === 'rain' || weather.iconCode === 'thunder';
 
     return (
         <div className={`p-6 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden transition-all hover:shadow-md bg-white`}>
@@ -133,37 +142,26 @@ export default function WeatherWidget({ zipCode }: WeatherWidgetProps) {
                     </div>
                 </div>
 
-                {/* Narrative / Alerts Section */}
-                {hasAlerts && priorityEvent ? (
-                    <div className="bg-red-50 border border-red-100 rounded-xl p-3 flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2">
-                        <AlertTriangle size={20} className="text-red-500 mt-1 flex-shrink-0" />
+                {/* Contextual Gardening Advice */}
+                {context && (
+                    <div className={`rounded-xl p-4 border flex items-start gap-3 ${colors}`}>
+                        {context.type === 'error' && <AlertTriangle size={20} className="mt-1 flex-shrink-0 text-red-500" />}
+                        {context.type === 'warning' && <AlertTriangle size={20} className="mt-1 flex-shrink-0 text-orange-500" />}
+                        {context.type === 'info' && <CloudRain size={20} className="mt-1 flex-shrink-0 text-blue-500" />}
+                        {context.type === 'success' && <Sun size={20} className="mt-1 flex-shrink-0 text-green-600" />}
+
                         <div>
-                            <div className="font-bold text-red-900 text-sm mb-1">
-                                {priorityEvent.event === "Special Weather Statement" ? "Atmospheric Advice" : priorityEvent.event}
+                            <div className="font-bold text-sm mb-1">
+                                {context.headline}
                             </div>
-                            <p className="text-red-800 text-xs leading-relaxed line-clamp-3">
-                                {priorityEvent.description || priorityEvent.headline}
+                            <p className="text-xs leading-relaxed opacity-90">
+                                {context.subtext}
                             </p>
-                            {priorityEvent.instruction && (
-                                <p className="mt-1 text-[10px] font-semibold text-red-700 uppercase tracking-wide">
-                                    Action: {priorityEvent.instruction.slice(0, 60)}...
+                            {context.action && (
+                                <p className="mt-2 text-[10px] font-bold uppercase tracking-wide opacity-80">
+                                    Action: {context.action}
                                 </p>
                             )}
-                        </div>
-                    </div>
-                ) : (
-                    // Standard Advice
-                    <div className={`rounded-xl p-3 flex items-start gap-3 border ${isRainy ? 'bg-blue-50 border-blue-100' : 'bg-green-50 border-green-100'}`}>
-                        {isRainy ? <CloudRain size={20} className="text-blue-500 mt-1" /> : <Sun size={20} className="text-green-600 mt-1" />}
-                        <div>
-                            <div className={`font-bold text-sm mb-1 ${isRainy ? 'text-blue-900' : 'text-green-900'}`}>
-                                {isRainy ? "Nature is watering today" : "Good growing weather"}
-                            </div>
-                            <p className={`text-xs leading-relaxed ${isRainy ? 'text-blue-800' : 'text-green-800'}`}>
-                                {isRainy
-                                    ? "Rain is in the forecast. You can likely skip manual watering."
-                                    : "No active alerts. Stick to your regular care schedule."}
-                            </p>
                         </div>
                     </div>
                 )}

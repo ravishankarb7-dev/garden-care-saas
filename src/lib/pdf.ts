@@ -21,9 +21,10 @@ const FILE_MAPPING: Record<string, string> = {
     'lettuce': 'Vegetable_Starts_Agent_Grade_Priority.pdf'
 };
 
-export async function getCareGuideContent(plantId: string): Promise<string | null> {
+export async function getCareGuideContent(plantId: string, plantName?: string): Promise<string | null> {
     let filename: string | undefined;
 
+    // 1. Try ID Match
     if (FILE_MAPPING[plantId]) {
         filename = FILE_MAPPING[plantId];
     } else {
@@ -31,9 +32,31 @@ export async function getCareGuideContent(plantId: string): Promise<string | nul
         if (key) filename = FILE_MAPPING[key];
     }
 
+    // 2. Try Name Match (Fallback)
+    if (!filename && plantName) {
+        const normalizedName = plantName.toLowerCase();
+        // Check for specific keywords in name
+        if (normalizedName.includes('tomato') || normalizedName.includes('pepper') || normalizedName.includes('vegetable')) {
+            filename = 'Vegetable_Starts_Agent_Grade_Priority.pdf';
+        } else if (normalizedName.includes('rose') || normalizedName.includes('hydrangea') || normalizedName.includes('shrub')) {
+            // Very rough fallback, better than nothing, but risky? 
+            // Better to check specific shrub keywords if possible.
+            if (normalizedName.includes('deciduous')) filename = 'Deciduous_Flowering_Shrubs_Agent_Grade_Priority.pdf';
+            if (normalizedName.includes('evergreen') || normalizedName.includes('boxwood')) filename = 'Evergreen_Shrubs_Agent_Grade_Priority.pdf';
+        } else if (normalizedName.includes('boxwood') || normalizedName.includes('pine') || normalizedName.includes('yew')) {
+            filename = 'Evergreen_Shrubs_Agent_Grade_Priority.pdf';
+        }
+
+        // Comprehensive Keyword Check using keys from FILE_MAPPING
+        if (!filename) {
+            const key = Object.keys(FILE_MAPPING).find(k => normalizedName.includes(k));
+            if (key) filename = FILE_MAPPING[key];
+        }
+    }
+
     if (!filename) {
-        console.warn(`[PDF] No matching care guide found for plant ID: ${plantId}`);
-        return null;
+        console.warn(`[PDF] No matching care guide found for plant ID: ${plantId}, Name: ${plantName}`);
+        return null; // Agent will fall back to Global Rules
     }
 
     // Static Lookup

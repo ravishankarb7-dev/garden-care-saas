@@ -33,13 +33,44 @@ export default function IntakePage() {
     const handleConfirm = async (payload: FinalReceiptPayload) => {
         try {
             // Import dynamically
-            const { createCareSessions } = await import("@/lib/queries");
+            const { createCareSessions, getCareSessionsByDeviceId } = await import("@/lib/queries");
+
+            // Check for Zip Logic (New Garden Case)
+            let targetDeviceId = deviceId;
+            const existingSessions = await getCareSessionsByDeviceId(deviceId);
+
+            if (existingSessions.length > 0) {
+                const existingZip = existingSessions[0].zip;
+                // If garden has a zip, and new payload has a different zip -> New Garden
+                if (existingZip && payload.zip && existingZip !== payload.zip) {
+                    const { findGardenIdByZip } = await import("@/lib/device");
+                    const reusableId = findGardenIdByZip(payload.zip);
+
+                    if (reusableId) {
+                        // Found existing garden for this zip
+                        console.log(`Found existing garden ${reusableId} for zip ${payload.zip}`);
+                        targetDeviceId = reusableId;
+                        saveDeviceId(reusableId);
+                        setDeviceId(reusableId);
+                    } else {
+                        const newCode = `GARDEN-${Math.floor(1000 + Math.random() * 9000)}`;
+                        if (confirm(`You are adding plants for a new location (${payload.zip}). Create a new Garden (${newCode})?`)) {
+                            targetDeviceId = newCode;
+                            saveDeviceId(newCode); // Switch context
+                            setDeviceId(newCode);
+                        } else {
+                            // User chose to keep in same garden, effectively overwriting context if we allow mixed zips
+                            // But for now we just use the old ID.
+                        }
+                    }
+                }
+            }
 
             // 1. Generate receipt ID (Scan based)
             const receiptId = `SCAN-${Date.now().toString().slice(-6)}`;
 
             // 2. Persist to DB
-            const success = await createCareSessions(receiptId, payload.selectedPlants, payload.date || new Date().toISOString(), payload.zip, deviceId);
+            const success = await createCareSessions(receiptId, payload.selectedPlants, payload.date || new Date().toISOString(), payload.zip, targetDeviceId);
 
             if (!success) {
                 alert("Failed to save scanned garden. Please try again.");
@@ -50,7 +81,11 @@ export default function IntakePage() {
             const existingReceipts = JSON.parse(localStorage.getItem("my_receipts") || "[]");
             localStorage.setItem("my_receipts", JSON.stringify([...existingReceipts, receiptId]));
 
-            alert(`Success! Created care schedule for ${payload.selectedPlants.length} plants under Receipt ${receiptId}.`);
+            // Add to history with Zip label
+            const { saveGardenToHistory } = await import("@/lib/device");
+            saveGardenToHistory(targetDeviceId, `Zip ${payload.zip}`);
+
+            alert(`Success! Created care schedule for ${payload.selectedPlants.length} plants in Garden ${targetDeviceId}.`);
             router.push("/dashboard");
 
         } catch (err) {
@@ -68,9 +103,10 @@ export default function IntakePage() {
             // Import dynamically to avoid build cycle issues
             const { createCareSessions, getCareSessionsByDeviceId } = await import("@/lib/queries");
 
-            console.log("Checking duplicates for device:", deviceId);
+            console.log("Checking duplicates/location for device:", deviceId);
             const existingSessions = await getCareSessionsByDeviceId(deviceId);
 
+            // Check duplication
             const isDuplicate = payload.plants.some(newPlant => {
                 return existingSessions.some(existing => {
                     const samePlant = existing.care_category_id === newPlant.uuid;
@@ -88,11 +124,38 @@ export default function IntakePage() {
                 return;
             }
 
+            // Check Zip / New Garden Logic
+            let targetDeviceId = deviceId;
+            if (existingSessions.length > 0) {
+                const existingZip = existingSessions[0].zip;
+                if (existingZip && payload.zip && existingZip !== payload.zip) {
+                    // Generate a standardized garden code
+                    const { generateGardenCode, findGardenIdByZip } = await import("@/lib/device");
+
+                    const reusableId = findGardenIdByZip(payload.zip);
+
+                    if (reusableId) {
+                        console.log(`Found existing garden ${reusableId} for zip ${payload.zip}`);
+                        targetDeviceId = reusableId;
+                        saveDeviceId(reusableId);
+                        setDeviceId(reusableId);
+                    } else {
+                        const newCode = generateGardenCode();
+
+                        if (confirm(`This zip code (${payload.zip}) is different from your current garden (${existingZip}).\n\nCreate a new Garden Code (${newCode})?`)) {
+                            targetDeviceId = newCode;
+                            saveDeviceId(newCode);
+                            setDeviceId(newCode);
+                        }
+                    }
+                }
+            }
+
             // Generate a unique transaction ID
             const transactionId = `MANUAL-${Date.now().toString().slice(-6)}`;
             console.log("Creating sessions with transactionId:", transactionId);
 
-            const success = await createCareSessions(transactionId, payload.plants, payload.date, payload.zip, deviceId);
+            const success = await createCareSessions(transactionId, payload.plants, payload.date, payload.zip, targetDeviceId);
 
             if (!success) {
                 console.error("createCareSessions returned false");
@@ -103,7 +166,12 @@ export default function IntakePage() {
 
             console.log("Success. Redirecting to dashboard.");
             setStatus("Success! Redirecting...");
-            alert(`Success! Added ${payload.plants.length} plants to your garden.`);
+
+            // Add to history with Zip label
+            const { saveGardenToHistory } = await import("@/lib/device");
+            saveGardenToHistory(targetDeviceId, `Zip ${payload.zip}`);
+
+            alert(`Success! Added ${payload.plants.length} plants to Garden ${targetDeviceId}.`);
             router.push("/dashboard");
         } catch (err) {
             console.error("Manual entry failed:", err);
@@ -132,6 +200,10 @@ export default function IntakePage() {
             // Save to local storage as THE device ID
             saveDeviceId(normalizedCode);
             setDeviceId(normalizedCode);
+
+            // Add to history
+            const { saveGardenToHistory } = await import("@/lib/device");
+            saveGardenToHistory(normalizedCode, `Garden ${normalizedCode}`);
 
             router.push("/dashboard");
         } catch (err) {

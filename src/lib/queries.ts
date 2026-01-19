@@ -69,7 +69,8 @@ export async function getPlants(): Promise<Plant[]> {
 // Helper to fuzzy match schedules based on keywords if exact ID match fails
 function assignDefaultSchedule(name: string): any[] {
     const n = name.toLowerCase();
-    const { PLANTS } = require('./data'); // Dynamic import to avoid cycle if any, or just import top level
+    const PLANTS = STATIC_DATA;
+
 
     if (n.includes('tomato') || n.includes('pepper') || n.includes('vegetable') || n.includes('lettuce') || n.includes('cucumber')) {
         return PLANTS.find((p: any) => p.id === 'vegetable-starts')?.careSchedule || [];
@@ -91,7 +92,7 @@ function assignDefaultSchedule(name: string): any[] {
 
 function assignDefaultTroubleshooting(name: string): any[] {
     const n = name.toLowerCase();
-    const { PLANTS } = require('./data');
+    const PLANTS = STATIC_DATA;
 
     if (n.includes('tomato') || n.includes('pepper') || n.includes('vegetable')) {
         return PLANTS.find((p: any) => p.id === 'vegetable-starts')?.troubleshooting || [];
@@ -100,34 +101,75 @@ function assignDefaultTroubleshooting(name: string): any[] {
 }
 
 export async function getPlantById(id: string): Promise<Plant | undefined> {
-    // First try to fetch from DB by key
-    const { data, error } = await supabase
+    // 1. First try to fetch from DB by key (Category Match)
+    let { data: category, error } = await supabase
         .from('care_categories')
         .select('*')
         .eq('key', id)
-        .single();
+        .maybeSingle<CareCategory>(); // Explicit generic here or type assignment below
 
-    if (error) {
-        // Fallback to local data if DB fetch fails or not found (for dev/offline)
+    // Force type for mutable variable
+    let matchedCategory: CareCategory | null = category;
+
+    // 2. If not found as a Category, try as a SKU
+    if (!matchedCategory) {
+        // Define the shape manually to satisfy TS for the join
+        type StoreSkuWithCategory = StoreSku & {
+            care_category: CareCategory | null
+        };
+
+        const { data: skuData, error: skuError } = await supabase
+            .from('store_skus')
+            .select(`
+                *,
+                care_category:care_categories(*)
+            `)
+            .eq('sku', id) // Only check SKU column to avoid UUID error
+            .maybeSingle();
+
+        if (skuData) {
+            const sku = skuData as unknown as StoreSkuWithCategory;
+
+            if (sku.care_category) {
+                // Found it! Use the parent category for the logic
+                matchedCategory = sku.care_category;
+
+                // NOTE: We verified logic: The user wants to use the SKU name for display, 
+                // but the Category's static data for care.
+
+                const staticData = STATIC_DATA.find((p) => p.id === matchedCategory!.key);
+
+                return {
+                    id: sku.sku, // Keep ID as the SKU for consistency
+                    uuid: sku.care_category_id,
+                    name: sku.display_name || sku.sku, // Use SKU name
+                    botanicalName: sku.sku, // Storing SKU in botanical for ref
+                    imageUrl: staticData?.imageUrl || "/images/placeholder.png",
+                    careSchedule: staticData?.careSchedule?.length ? staticData.careSchedule : assignDefaultSchedule(matchedCategory!.label || ""),
+                    troubleshooting: staticData?.troubleshooting?.length ? staticData.troubleshooting : assignDefaultTroubleshooting(matchedCategory!.label || ""),
+                };
+            }
+        }
+    }
+
+    if (error && !matchedCategory) {
         console.warn(`Plant ${id} not found in DB or error:`, error.message);
+        // Fallback to local data (last resort for dev/offline)
         return STATIC_DATA.find(p => p.id === id);
     }
 
-    // Explicitly cast data to help TS if needed, usually data is the Row type
-    const category = data as CareCategory | null;
+    if (!matchedCategory) return undefined;
 
-    if (!category) return undefined;
-
-    const staticData = STATIC_DATA.find((p) => p.id === category.key);
+    const staticData = STATIC_DATA.find((p) => p.id === matchedCategory.key);
 
     return {
-        id: category.key,
-        uuid: category.id,
-        name: category.label,
+        id: matchedCategory.key,
+        uuid: matchedCategory.id,
+        name: matchedCategory.label,
         botanicalName: staticData?.botanicalName || "",
         imageUrl: staticData?.imageUrl || "/images/placeholder.png",
-        careSchedule: staticData?.careSchedule?.length ? staticData.careSchedule : assignDefaultSchedule(category.label || ""),
-        troubleshooting: staticData?.troubleshooting?.length ? staticData.troubleshooting : assignDefaultTroubleshooting(category.label || ""),
+        careSchedule: staticData?.careSchedule?.length ? staticData.careSchedule : assignDefaultSchedule(matchedCategory.label || ""),
+        troubleshooting: staticData?.troubleshooting?.length ? staticData.troubleshooting : assignDefaultTroubleshooting(matchedCategory.label || ""),
     };
 }
 
@@ -242,6 +284,180 @@ export async function deleteCareSession(id: string): Promise<boolean> {
 
     if (error) {
         console.error("Error deleting session:", error);
+        return false;
+    }
+    return true;
+}
+
+// --- Gamification Logic ---
+
+export interface UserStats {
+    device_id: string;
+    xp: number;
+    level: number;
+    streak_days: number;
+    last_active_date: string | null;
+    badges: string[];
+}
+
+import { calculateLevel, calculateWordCountXP, calculateNewStreak } from './gamification_logic';
+
+export async function getUserStats(deviceId: string): Promise<UserStats> {
+    const { data, error } = await supabase
+        .from('user_stats')
+        .select('*')
+        .eq('device_id', deviceId)
+        .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') {
+        console.warn("Error fetching user stats:", error);
+    }
+
+    if (!data) {
+        // Initialize if not exists
+        return {
+            device_id: deviceId,
+            xp: 0,
+            level: 1,
+            streak_days: 0,
+            last_active_date: null,
+            badges: []
+        };
+    }
+
+    return data as UserStats;
+}
+
+export async function awardXP(deviceId: string, amount: number, activityDate: string = new Date().toISOString().split('T')[0]): Promise<void> {
+    // Fetch current stats
+    let stats = await getUserStats(deviceId);
+
+    // Update XP
+    stats.xp += amount;
+    const newLevel = calculateLevel(stats.xp);
+
+    // Update Streak
+    const today = activityDate;
+    const newStreak = calculateNewStreak(stats.streak_days, stats.last_active_date, today);
+
+    // Persist
+    const { error } = await supabase
+        .from('user_stats')
+        .upsert({
+            device_id: deviceId,
+            xp: stats.xp,
+            level: newLevel,
+            streak_days: newStreak,
+            last_active_date: today,
+            badges: stats.badges // TODO: Add logic to push new badges
+        });
+
+    if (error) console.error("Failed to update XP:", error);
+}
+
+// --- Care Logs (Check-ins) ---
+
+export async function logCareAction(
+    sessionId: string,
+    actionType: string,
+    logDate: string,
+    status: 'THRIVING' | 'CONCERN' | 'CRITICAL',
+    note: string
+): Promise<boolean> {
+    const { error } = await supabase
+        .from('care_logs')
+        .upsert({
+            care_session_id: sessionId,
+            action_type: actionType,
+            log_date: logDate,
+            status,
+            note
+        }, { onConflict: 'care_session_id, action_type, log_date' });
+
+    if (error) {
+        console.error("Error logging care:", error);
+        return false;
+    }
+
+    // Gamification Hook: Award XP
+    // 1. Get Device ID from Session
+    const { data: session } = await supabase
+        .from('care_sessions')
+        .select('receipt_id')
+        .eq('id', sessionId)
+        .single();
+
+    if (session?.receipt_id) {
+        // Calculate Points
+        const baseXP = 10;
+        const qualityXP = calculateWordCountXP(note);
+        await awardXP(session.receipt_id, baseXP + qualityXP, logDate);
+    }
+
+    return true;
+}
+
+export async function getCareLogs(sessionId: string): Promise<any[]> {
+    const { data, error } = await supabase
+        .from('care_logs')
+        .select('*')
+        .eq('care_session_id', sessionId);
+
+    if (error) {
+        console.error("Error fetching logs:", error);
+        return [];
+    }
+    return data || [];
+}
+
+export async function getAllCareLogs(deviceId: string): Promise<any[]> {
+    if (!deviceId) return [];
+
+    // Join care_logs with care_sessions to filter by receipt_id (deviceId)
+    const { data, error } = await supabase
+        .from('care_logs')
+        .select(`
+            *,
+            care_session:care_sessions!inner(
+                care_category:care_categories(label),
+                store_sku:store_skus(display_name, sku)
+            )
+        `)
+        .eq('care_session.receipt_id', deviceId)
+        .order('log_date', { ascending: false })
+        .limit(20); // Limit to recent 20 logs for context window
+
+    if (error) {
+        console.error("Error fetching all logs:", error);
+        return [];
+    }
+
+    // Flatten for the AI
+    return data.map((log: any) => ({
+        date: log.log_date,
+        plant: log.care_session?.store_sku?.display_name || log.care_session?.store_sku?.sku || log.care_session?.care_category?.label || "Unknown Plant",
+        status: log.status,
+        note: log.note
+    }));
+}
+
+// --- App Feedback ---
+
+export async function logAppFeedback(
+    text: string,
+    category: 'FEATURE' | 'BUG' | 'UI' | 'CONTENT' | 'GENERAL',
+    sentiment: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL'
+): Promise<boolean> {
+    const { error } = await supabase
+        .from('app_feedback')
+        .insert({
+            feedback_text: text,
+            category,
+            sentiment
+        });
+
+    if (error) {
+        console.error("Error logging feedback:", error);
         return false;
     }
     return true;

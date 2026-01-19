@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
 
         // Call OpenAI Vision
         const response = await openai.chat.completions.create({
-            model: "gpt-4o", // Using the powerful model for vision accuracy
+            model: "gpt-4o-mini", // Cost-effective model for receipt scanning
             messages: [
                 {
                     role: "system",

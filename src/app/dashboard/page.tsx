@@ -1,19 +1,19 @@
 "use client";
-
 import { useEffect, useState, Suspense } from "react";
 import Header from "@/components/Header";
-import { Sprout, Calendar, Droplets, Bug, Leaf, X, Check, Trash2 } from "lucide-react";
-import { Plant, CareTask } from "@/lib/types";
-import { getCareSessionsByReceipt, getPlants } from "@/lib/queries";
+import { Sprout, Calendar, Droplets, Bug, Leaf, Trash2 } from "lucide-react";
+import { CareTask } from "@/lib/types";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 import WeatherWidget from "@/components/WeatherWidget";
 import { getOrCreateDeviceId, saveDeviceId, isValidGardenCode } from "@/lib/device";
 import { useSearchParams, useRouter } from "next/navigation";
 import { generateGoogleCalendarLink, downloadICS } from "@/lib/calendar";
-import { cn } from "@/lib/utils";
 import SmartCareNarrative from "@/components/SmartCareNarrative";
+import SageAlertBanner, { AlertType, AlertLevel } from "@/components/SageAlertBanner";
+import { GamificationHUD } from "@/components/GamificationHUD";
+import { getUserStats, UserStats } from "@/lib/queries";
 
 interface DashboardPlant {
     id: string;
@@ -34,6 +34,9 @@ function DashboardContent() {
     const [loading, setLoading] = useState(true);
     const [deviceId, setDeviceId] = useState("");
     const [calendarOpen, setCalendarOpen] = useState<string | null>(null);
+    const [disabledPlants, setDisabledPlants] = useState<Record<string, boolean>>({});
+    const [weatherAlert, setWeatherAlert] = useState<{ type: AlertType, level: AlertLevel, message: string } | null>(null);
+    const [userStats, setUserStats] = useState<UserStats | null>(null);
 
     const searchParams = useSearchParams();
     const router = useRouter();
@@ -58,8 +61,10 @@ function DashboardContent() {
                     router.replace(`/dashboard?id=${id}`);
                 }
 
-                const { getCareSessionsByDeviceId, getPlants } = await import("@/lib/queries");
+                const { getCareSessionsByDeviceId, getPlants, getUserStats } = await import("@/lib/queries");
                 const sessions = await getCareSessionsByDeviceId(id!);
+                const stats = await getUserStats(id!);
+                setUserStats(stats);
                 const staticPlants = await getPlants();
 
                 const hydrated = sessions.map(session => {
@@ -105,6 +110,54 @@ function DashboardContent() {
         }
         load();
     }, []);
+
+    // Check Weather Risks for ALL unique zips
+    useEffect(() => {
+        async function checkRisks() {
+            const uniqueZips = Array.from(new Set(myPlants.map(p => p.zip).filter(Boolean))) as string[];
+            if (uniqueZips.length === 0) return;
+
+            let criticalAlert = null;
+            let warningAlert = null;
+
+            await Promise.all(uniqueZips.map(async (zip) => {
+                try {
+                    const res = await fetch(`/api/weather?zip=${zip}`);
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    const temp = data.temp;
+
+                    if (temp <= 32) {
+                        criticalAlert = {
+                            type: 'WEATHER' as AlertType,
+                            level: 'CRITICAL' as AlertLevel,
+                            message: `Freeze Warning (${temp}°F in ${zip}): Cover delicate plants. Care tasks paused.`
+                        };
+                    } else if (temp >= 95) {
+                        warningAlert = {
+                            type: 'WEATHER' as AlertType,
+                            level: 'WARNING' as AlertLevel,
+                            message: `Heat Advisory (${temp}°F in ${zip}): Water early. Avoid fertilizing.`
+                        };
+                    }
+                } catch (e) {
+                    console.error(`Weather check failed for ${zip}`, e);
+                }
+            }));
+
+            if (criticalAlert) {
+                setWeatherAlert(criticalAlert);
+            } else if (warningAlert) {
+                setWeatherAlert(warningAlert);
+            } else {
+                setWeatherAlert(null);
+            }
+        }
+
+        if (myPlants.length > 0) {
+            checkRisks();
+        }
+    }, [myPlants]);
 
     function getNextActionDate(schedule: any[], actionType: string, plantedDate: Date): Date | null {
         if (!schedule || schedule.length === 0) return null;
@@ -153,14 +206,26 @@ function DashboardContent() {
         setCalendarOpen(null);
     };
 
-
     return (
         <div className="min-h-screen bg-zinc-50 font-sans" onClick={() => setCalendarOpen(null)}>
             <Header />
 
+            {/* Sage Alert Banner */}
+            {weatherAlert && (
+                <div className="max-w-5xl mx-auto mt-4 px-6">
+                    <div className="rounded-lg overflow-hidden shadow-sm">
+                        <SageAlertBanner
+                            type={weatherAlert.type}
+                            level={weatherAlert.level}
+                            message={weatherAlert.message}
+                        />
+                    </div>
+                </div>
+            )}
+
             <main className="max-w-5xl mx-auto px-6 py-12">
                 <div className="mb-10">
-                    {/* Weather Widget */}
+                    {/* Weather Widget (First Zip Only for Visuals) */}
                     {myPlants.find(p => p.zip)?.zip && (
                         <div className="mb-8">
                             <WeatherWidget zipCode={myPlants.find(p => p.zip)?.zip || ""} />
@@ -170,7 +235,18 @@ function DashboardContent() {
                     <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
                         <div>
                             <h1 className="text-3xl font-bold tracking-tight text-zinc-900 mb-2 font-serif">Your Canopy</h1>
-                            <p className="text-zinc-500">Manage your care schedules and plant health.</p>
+                            <p className="text-zinc-500 mb-4">Manage your care schedules and plant health.</p>
+
+                            {/* Gamification HUD */}
+                            {userStats && (
+                                <div className="mb-4">
+                                    <GamificationHUD
+                                        xp={userStats.xp}
+                                        level={userStats.level}
+                                        streak={userStats.streak_days}
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         {/* Device ID Helper */}
@@ -199,7 +275,6 @@ function DashboardContent() {
                     </div>
                 ) : myPlants.length === 0 ? (
                     <div className="flex flex-col gap-8">
-                        <WeatherWidget zipCode="90210" />
                         <Card className="text-center p-12 border-dashed border-2 border-zinc-200 shadow-none bg-zinc-50/50">
                             <div className="bg-zinc-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-zinc-400">
                                 <Sprout size={40} />
@@ -235,7 +310,6 @@ function DashboardContent() {
                                     </div>
 
                                     {/* Delete Button */}
-                                    {/* Delete Button - Fixed Visibility */}
                                     <button
                                         className="absolute top-4 right-4 p-2 bg-white/80 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-full border border-zinc-200 shadow-sm transition-all duration-200 z-10"
                                         title="Remove Plant"
@@ -257,71 +331,98 @@ function DashboardContent() {
                                 {/* Smart Agent Narrative */}
                                 {item.zip && (
                                     <div className="px-6 pb-2">
-                                        <SmartCareNarrative plantId={item.plantId} zipCode={item.zip} />
+                                        <SmartCareNarrative
+                                            plantId={item.plantId}
+                                            plantName={item.name}
+                                            zipCode={item.zip}
+                                            onRiskChange={(shouldDisable) => {
+                                                setDisabledPlants(prev => ({ ...prev, [item.id]: shouldDisable }));
+                                            }}
+                                        />
                                     </div>
                                 )}
 
                                 <div className="px-6 pb-6 mt-auto">
-                                    <div className="bg-zinc-50 rounded-lg border border-zinc-100 divide-x divide-zinc-200 grid grid-cols-3 text-center mb-6">
-                                        <div className="py-3 px-1">
-                                            <Droplets size={16} className="mx-auto text-blue-500 mb-1.5" />
-                                            <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Water</div>
-                                            <div className="font-semibold text-sm text-zinc-900">{item.nextWater}</div>
+                                    {disabledPlants[item.id] ? (
+                                        <div className="bg-amber-50 rounded-lg border border-amber-100 p-4 text-center mb-6">
+                                            <p className="text-xs font-bold text-amber-800 uppercase tracking-widest mb-1">Care Paused</p>
+                                            <p className="text-xs text-amber-700">Actions disabled due to safety warning.</p>
                                         </div>
-                                        <div className="py-3 px-1">
-                                            <Leaf size={16} className="mx-auto text-green-500 mb-1.5" />
-                                            <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Feed</div>
-                                            <div className="font-semibold text-sm text-zinc-900">{item.nextFertilize}</div>
+                                    ) : (
+                                        <div className="bg-zinc-50 rounded-lg border border-zinc-100 divide-x divide-zinc-200 grid grid-cols-3 text-center mb-6">
+                                            <div className="py-3 px-1">
+                                                <Droplets size={16} className="mx-auto text-blue-500 mb-1.5" />
+                                                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Water</div>
+                                                <div className="font-semibold text-sm text-zinc-900">{item.nextWater}</div>
+                                            </div>
+                                            <div className="py-3 px-1">
+                                                <Leaf size={16} className="mx-auto text-green-500 mb-1.5" />
+                                                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Feed</div>
+                                                <div className="font-semibold text-sm text-zinc-900">{item.nextFertilize}</div>
+                                            </div>
+                                            <div className="py-3 px-1">
+                                                <Bug size={16} className="mx-auto text-amber-500 mb-1.5" />
+                                                <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Pest</div>
+                                                <div className="font-semibold text-sm text-zinc-900">{item.nextPest}</div>
+                                            </div>
                                         </div>
-                                        <div className="py-3 px-1">
-                                            <Bug size={16} className="mx-auto text-amber-500 mb-1.5" />
-                                            <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Pest</div>
-                                            <div className="font-semibold text-sm text-zinc-900">{item.nextPest}</div>
-                                        </div>
-                                    </div>
+                                    )}
 
                                     <div className="flex items-center gap-2">
-                                        <Link href={`/my-plants/${item.id}`} className="flex-1">
-                                            <Button variant="secondary" fullWidth className="bg-zinc-100 text-zinc-900 hover:bg-zinc-200 border-0">
+                                        {disabledPlants[item.id] ? (
+                                            <Button
+                                                variant="secondary"
+                                                fullWidth
+                                                className="bg-zinc-100 text-zinc-400 cursor-not-allowed border-0 hover:bg-zinc-100 placeholder-opacity-50"
+                                                disabled
+                                            >
                                                 View Care
                                             </Button>
-                                        </Link>
+                                        ) : (
+                                            <Link href={`/my-plants/${item.id}`} className="flex-1">
+                                                <Button variant="secondary" fullWidth className="bg-zinc-100 text-zinc-900 hover:bg-zinc-200 border-0">
+                                                    View Care
+                                                </Button>
+                                            </Link>
+                                        )}
 
-                                        {/* Calendar Button */}
-                                        <div className="relative">
-                                            <Button
-                                                variant="outline"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setCalendarOpen(calendarOpen === item.id ? null : item.id);
-                                                }}
-                                                disabled={!item.nextWaterDate}
-                                                className="px-3"
-                                                title="Sync the Sprout"
-                                            >
-                                                <Calendar size={16} className="text-zinc-500" />
-                                            </Button>
+                                        {/* Calendar Button - Disabled if Paused */}
+                                        {!disabledPlants[item.id] && (
+                                            <div className="relative">
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setCalendarOpen(calendarOpen === item.id ? null : item.id);
+                                                    }}
+                                                    disabled={!item.nextWaterDate}
+                                                    className="px-3"
+                                                    title="Sync the Sprout"
+                                                >
+                                                    <Calendar size={16} className="text-zinc-500" />
+                                                </Button>
 
-                                            {calendarOpen === item.id && (
-                                                <div className="absolute bottom-full right-0 mb-2 w-56 bg-white rounded-lg shadow-xl border border-zinc-200 overflow-hidden z-20 animate-in fade-in zoom-in-95 duration-200">
-                                                    <div className="bg-zinc-50 px-3 py-2 text-xs font-bold text-zinc-500 uppercase tracking-wider border-b border-zinc-100">
-                                                        Add Reminder
+                                                {calendarOpen === item.id && (
+                                                    <div className="absolute bottom-full right-0 mb-2 w-56 bg-white rounded-lg shadow-xl border border-zinc-200 overflow-hidden z-20 animate-in fade-in zoom-in-95 duration-200">
+                                                        <div className="bg-zinc-50 px-3 py-2 text-xs font-bold text-zinc-500 uppercase tracking-wider border-b border-zinc-100">
+                                                            Add Reminder
+                                                        </div>
+                                                        <button
+                                                            className="w-full text-left px-4 py-2.5 hover:bg-zinc-50 text-sm text-zinc-700 flex items-center gap-2"
+                                                            onClick={(e) => { e.stopPropagation(); handleAddToCalendar('google', item); }}
+                                                        >
+                                                            Google Calendar
+                                                        </button>
+                                                        <button
+                                                            className="w-full text-left px-4 py-2.5 hover:bg-zinc-50 text-sm text-zinc-700 flex items-center gap-2"
+                                                            onClick={(e) => { e.stopPropagation(); handleAddToCalendar('ics', item); }}
+                                                        >
+                                                            Outlook / Apple (.ics)
+                                                        </button>
                                                     </div>
-                                                    <button
-                                                        className="w-full text-left px-4 py-2.5 hover:bg-zinc-50 text-sm text-zinc-700 flex items-center gap-2"
-                                                        onClick={(e) => { e.stopPropagation(); handleAddToCalendar('google', item); }}
-                                                    >
-                                                        Google Calendar
-                                                    </button>
-                                                    <button
-                                                        className="w-full text-left px-4 py-2.5 hover:bg-zinc-50 text-sm text-zinc-700 flex items-center gap-2"
-                                                        onClick={(e) => { e.stopPropagation(); handleAddToCalendar('ics', item); }}
-                                                    >
-                                                        Outlook / Apple (.ics)
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </Card>
@@ -344,4 +445,3 @@ export default function DashboardPage() {
         </Suspense>
     );
 }
-
