@@ -350,7 +350,7 @@ export async function awardXP(deviceId: string, amount: number, activityDate: st
             streak_days: newStreak,
             last_active_date: today,
             badges: stats.badges // TODO: Add logic to push new badges
-        });
+        } as any);
 
     if (error) console.error("Failed to update XP:", error);
 }
@@ -372,7 +372,7 @@ export async function logCareAction(
             log_date: logDate,
             status,
             note
-        }, { onConflict: 'care_session_id, action_type, log_date' });
+        } as any, { onConflict: 'care_session_id, action_type, log_date' });
 
     if (error) {
         console.error("Error logging care:", error);
@@ -387,11 +387,11 @@ export async function logCareAction(
         .eq('id', sessionId)
         .single();
 
-    if (session?.receipt_id) {
+    if ((session as any)?.receipt_id) {
         // Calculate Points
         const baseXP = 10;
         const qualityXP = calculateWordCountXP(note);
-        await awardXP(session.receipt_id, baseXP + qualityXP, logDate);
+        await awardXP((session as any).receipt_id, baseXP + qualityXP, logDate);
     }
 
     return true;
@@ -454,7 +454,7 @@ export async function logAppFeedback(
             feedback_text: text,
             category,
             sentiment
-        });
+        } as any);
 
     if (error) {
         console.error("Error logging feedback:", error);

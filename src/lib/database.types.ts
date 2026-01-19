@@ -157,6 +157,32 @@ export interface Database {
                     created_at?: string
                 }
             }
+            user_stats: {
+                Row: {
+                    device_id: string
+                    xp: number
+                    level: number
+                    streak_days: number
+                    last_active_date: string | null
+                    badges: Json
+                }
+                Insert: {
+                    device_id: string
+                    xp?: number
+                    level?: number
+                    streak_days?: number
+                    last_active_date?: string | null
+                    badges?: Json
+                }
+                Update: {
+                    device_id?: string
+                    xp?: number
+                    level?: number
+                    streak_days?: number
+                    last_active_date?: string | null
+                    badges?: Json
+                }
+            }
         }
         Views: {
             [_ in never]: never
