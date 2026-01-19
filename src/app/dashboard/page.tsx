@@ -27,6 +27,7 @@ interface DashboardPlant {
     nextPest: string;
     nextWaterDate: Date | null;
     zip?: string;
+    isEstablished: boolean;
 }
 
 function DashboardContent() {
@@ -97,7 +98,8 @@ function DashboardContent() {
                         nextFertilize: getNextAction(schedule, "Fertilize", plantedDate),
                         nextPest: getNextAction(schedule, "Pest", plantedDate) || getNextAction(schedule, "Inspect", plantedDate),
                         imageUrl: matchedPlant?.imageUrl,
-                        zip: session.zip
+                        zip: session.zip,
+                        isEstablished: (new Date().getTime() - plantedDate.getTime()) / (1000 * 60 * 60 * 24) > 28
                     };
                 });
 
@@ -347,6 +349,12 @@ function DashboardContent() {
                                         <div className="bg-amber-50 rounded-lg border border-amber-100 p-4 text-center mb-6">
                                             <p className="text-xs font-bold text-amber-800 uppercase tracking-widest mb-1">Care Paused</p>
                                             <p className="text-xs text-amber-700">Actions disabled due to safety warning.</p>
+                                        </div>
+                                    ) : item.isEstablished ? (
+                                        <div className="bg-emerald-50 rounded-lg border border-emerald-100 p-4 text-center mb-6">
+                                            <p className="text-xs font-bold text-emerald-700 uppercase tracking-widest mb-1">Established 🏆</p>
+                                            <p className="text-sm text-emerald-800 font-medium mb-1">Weekly Maintenance Mode</p>
+                                            <p className="text-xs text-emerald-600/80">Great job! Switch to weekly deep watering & pruning.</p>
                                         </div>
                                     ) : (
                                         <div className="bg-zinc-50 rounded-lg border border-zinc-100 divide-x divide-zinc-200 grid grid-cols-3 text-center mb-6">

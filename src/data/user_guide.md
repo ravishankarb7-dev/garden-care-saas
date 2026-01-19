@@ -29,7 +29,10 @@ You have three ways to build your canopy:
 ## 4. The Care Schedule (Nurture Notes)
 Your dashboard shows a 28-day countdown for each plant.
 ### The Tasks
-- **Water**: Deep watering is key. Never "sip" (shallow sprinkle). Water until it drains.
+- **Water**: **Deep Watering** is non-negotiable.
+    -   **"Sipping" (Bad)**: Shallow daily sprinkles encourage shallow roots that fry in heat.
+    -   **Deep Soak (Good)**: Water slowly until it drains from the bottom. This forces roots deep into cool soil.
+    -   **Mulch Rule**: Keep mulch 2-3 inches away from the stem/crown ("The Donut Rule") to prevent rot.
 - **Check**: Look for specific signs like wilting or spots.
 - **Feed**: *Only* when the schedule says so. Fertilizing a stressed plant is like feeding a steak to a flu patient—it hurts them.
 
@@ -89,8 +92,19 @@ Found a bug? Or a feature you love?
 
 ---
 
-## 8. Panic vs. Patience: Interpreting Symptoms
-Plants talk, but sometimes they mumble. Here is how to translate their language so you don't panic unnecessarily.
+## 8. Panic vs. Patience: The Logic Tree
+Plants talk, but sometimes they mumble. Use this logic tree to translate their language.
+
+### Step 1: The Moisture Test (The Golden Rule)
+Stick your finger 2 inches into the soil.
+*   **WET + WILTED** = 🚨 **PANIC (Root Rot)**. Stop watering immediately. Improve drainage.
+*   **DRY + WILTED** = ✅ **PATIENCE (Thirst)**. Water deeply and wait 4 hours.
+
+### Step 2: Leaf Reading
+*   **YELLOW LEAVES (BOTTOM)** = ✅ **PATIENCE (Aging)**. Old leaves die to feed new ones. Normal.
+*   **YELLOW LEAVES (TOP/NEW)** = 🚨 **ACT (Deficiency)**. Root trouble or pH imbalance. Ask Sage.
+*   **BROWN TIPS** = 🍂 **WATCH (Stress)**. Inconsistent watering or salt buildup.
+
 
 ### ✅ Don't Panic (Patience Required)
 *These are common "growing pains" during stabilization.*
@@ -116,4 +130,28 @@ Your gardening progress is tracked in your **Profile (Trophy Shed)**.
     -   **First Bloomer**: Adding your first plant.
     -   **The Journalist**: Writing detailed care notes.
     -   **Survivor**: Keeping a plant alive for 28+ days.
+
+---
+
+## 10. Phases of Growth (P1, P2, P4)
+Understanding where your plant is in its lifecycle helps you ignore the wrong advice.
+
+### P1: Survival Mode (Days 0-14)
+*   **Goal**: Stop the plant from dying.
+*   **Actions**: Shade, Water, Monitor.
+*   **Forbidden**: No fertilizer, No pruning, No transplanting.
+
+### P2: Establishment (Days 15-28)
+*   **Goal**: Root growth.
+*   **Signals of Success**:
+    *   **New Terminal Growth**: Tiny new green shoots appearing at the tips branches.
+    *   **Perkiness**: Leaves hold themselves up firmly in the morning.
+    *   **Vegetables**: Warm-season crops (Tomatos/Peppers) need soil temps > 60°F to succeed here.
+
+### P4: Maintenance & Transition (Day 29+)
+*   **Goal**: Long-term structural health.
+*   **Transition**: You graduate from "Daily Checks" to "Weekly Maintenance".
+*   **Pruning Rules**:
+    *   **Deciduous Shrubs**: Prune "Old Wood" (dead/grey) to encourage "New Wood" (green/red).
+    *   **Annuals**: "Deadhead" (pinch off) spent flowers to force more blooms.
 
