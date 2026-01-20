@@ -41,7 +41,7 @@ export async function POST(req: Request) {
                 sentiment,
                 verified_issue,
                 // We don't extract plant name reliably with regex, so leaving null for now
-            });
+            } as any);
 
         if (error) {
             console.error("Failed to log insight:", error);
