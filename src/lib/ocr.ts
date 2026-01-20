@@ -5,12 +5,17 @@ export type ScannedItem = {
         id: string;
         name: string;
     };
+    price: number | null;
+    potSize: string | null;
+    quantity: number;
 };
 
 export type ScannedReceiptData = {
     receiptId: string;
     purchaseDate: string;
     storeName: string;
+    storeZip: string | null;
+    transactionTotal: number | null;
     items: ScannedItem[];
 };
 

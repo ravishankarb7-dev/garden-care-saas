@@ -31,15 +31,31 @@ export async function POST(req: NextRequest) {
                     role: "system",
                     content: `You are a receipt scanner for a gardening app. 
                     Analyze the receipt image and extract:
-                    1. Store Name
-                    2. Purchase Date (YYYY-MM-DD) - Default to today if not found.
-                    3. List of distinct items purchased.
+                    1. Store Name & Zip/Postal Code (e.g. 5 digits US, alphanum UK/Canada).
+                    2. Receipt Number / Transaction ID (if visible).
+                    3. Purchase Date (YYYY-MM-DD) - Default to today if not found.
+                    4. Transaction Total Amount
+                    5. List of line items, extracting:
+                       - Description
+                       - Price (per item)
+                       - Pot Size (e.g. "1 GAL", "4 IN", "2.5 QT") if visible in description or sku.
+                       - Quantity
                     
                     Return ONLY raw JSON with this structure:
                     {
                         "storeName": "string",
+                        "storeZip": "string or null",
+                        "receiptNumber": "string or null",
                         "purchaseDate": "string",
-                        "items": ["string", "string"]
+                        "totalAmount": number or null,
+                        "items": [
+                            {
+                                "description": "string",
+                                "price": number or null,
+                                "pot_size": "string or null",
+                                "quantity": number
+                            }
+                        ]
                     }`
                 },
                 {
@@ -55,7 +71,7 @@ export async function POST(req: NextRequest) {
                     ],
                 },
             ],
-            max_tokens: 500,
+            max_tokens: 1000,
         });
 
         const content = response.choices[0].message.content;
@@ -70,8 +86,9 @@ export async function POST(req: NextRequest) {
         const data = JSON.parse(jsonStr);
 
         // Fuzzy Match Logic (Server-Side)
-        const scannedItems = data.items.map((rawItem: string) => {
-            const cleanLine = rawItem.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+        const scannedItems = data.items.map((rawItem: any) => {
+            // rawItem is now an object: { description, price, pot_size, quantity }
+            const cleanLine = rawItem.description.toLowerCase().replace(/[^a-z0-9\s]/g, '');
             let match = null;
 
             for (const plant of PLANTS) {
@@ -87,15 +104,23 @@ export async function POST(req: NextRequest) {
             }
 
             return {
-                originalText: rawItem,
-                matchedPlant: match || undefined
+                originalText: rawItem.description,
+                matchedPlant: match || undefined,
+                price: rawItem.price || null,
+                potSize: rawItem.pot_size || null,
+                quantity: rawItem.quantity || 1
             };
         });
 
+        // Use extracted ID or fallback
+        const finalReceiptId = data.receiptNumber || `REC-${Math.floor(Math.random() * 100000)}`;
+
         return NextResponse.json({
-            receiptId: `REC-${Math.floor(Math.random() * 100000)}`,
+            receiptId: finalReceiptId,
             storeName: data.storeName || "Unknown Store",
+            storeZip: data.storeZip || null,
             purchaseDate: data.purchaseDate || new Date().toISOString().split('T')[0],
+            transactionTotal: data.totalAmount || null,
             items: scannedItems
         });
 

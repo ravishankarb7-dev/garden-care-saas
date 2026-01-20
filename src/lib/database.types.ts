@@ -183,6 +183,35 @@ export interface Database {
                     badges?: Json
                 }
             }
+            user_insights: {
+                Row: {
+                    id: string
+                    receipt_id: string
+                    created_at: string
+                    intent: string | null
+                    plant_name: string | null
+                    sentiment: string | null
+                    verified_issue: boolean | null
+                }
+                Insert: {
+                    id?: string
+                    receipt_id: string
+                    created_at?: string
+                    intent?: string | null
+                    plant_name?: string | null
+                    sentiment?: string | null
+                    verified_issue?: boolean | null
+                }
+                Update: {
+                    id?: string
+                    receipt_id?: string
+                    created_at?: string
+                    intent?: string | null
+                    plant_name?: string | null
+                    sentiment?: string | null
+                    verified_issue?: boolean | null
+                }
+            }
         }
         Views: {
             [_ in never]: never

@@ -35,32 +35,38 @@ export default function IntakePage() {
             // Import dynamically
             const { createCareSessions, getCareSessionsByDeviceId } = await import("@/lib/queries");
 
-            // Check for Zip Logic (New Garden Case)
+            // Check for Zip Logic (New Garden Case) - using Store Zip as proxy for Garden Zip for now, or strictly for Store Provenance?
+            // Current app logic uses this zip for Weather, so we must assume user scans receipt near home or inputs home zip.
+            // The ReceiptAnalysisForm now labels it "Store Zip Code", but we use it as Garden Zip here contextually.
+            // Update: We now have a specific 'plantingZip' explicitly confirmed by user.
+            const sessionZip = payload.plantingZip || payload.storeZip || "";
+
             let targetDeviceId = deviceId;
             const existingSessions = await getCareSessionsByDeviceId(deviceId);
 
             if (existingSessions.length > 0) {
                 const existingZip = existingSessions[0].zip;
                 // If garden has a zip, and new payload has a different zip -> New Garden
-                if (existingZip && payload.zip && existingZip !== payload.zip) {
+                if (existingZip && sessionZip && existingZip !== sessionZip) {
                     const { findGardenIdByZip } = await import("@/lib/device");
-                    const reusableId = findGardenIdByZip(payload.zip);
+                    const reusableId = findGardenIdByZip(sessionZip);
 
                     if (reusableId) {
                         // Found existing garden for this zip
-                        console.log(`Found existing garden ${reusableId} for zip ${payload.zip}`);
+                        console.log(`Found existing garden ${reusableId} for zip ${sessionZip}`);
                         targetDeviceId = reusableId;
                         saveDeviceId(reusableId);
                         setDeviceId(reusableId);
                     } else {
                         const newCode = `GARDEN-${Math.floor(1000 + Math.random() * 9000)}`;
-                        if (confirm(`You are adding plants for a new location (${payload.zip}). Create a new Garden (${newCode})?`)) {
+                        if (confirm(`You are adding plants for a new location (${sessionZip}). Create a new Garden (${newCode})?`)) {
                             targetDeviceId = newCode;
                             saveDeviceId(newCode); // Switch context
                             setDeviceId(newCode);
                         } else {
-                            // User chose to keep in same garden, effectively overwriting context if we allow mixed zips
-                            // But for now we just use the old ID.
+                            // User cancelled - ABORT to prevent saving to likely wrong garden
+                            alert("Save cancelled. Please verify your zip code or switch gardens manually.");
+                            return;
                         }
                     }
                 }
@@ -70,7 +76,15 @@ export default function IntakePage() {
             const receiptId = `SCAN-${Date.now().toString().slice(-6)}`;
 
             // 2. Persist to DB
-            const success = await createCareSessions(receiptId, payload.selectedPlants, payload.date || new Date().toISOString(), payload.zip, targetDeviceId);
+            // Signature: receiptId, plants, plantingDate, zip, deviceId, purchaseDate?
+            const success = await createCareSessions(
+                receiptId,
+                payload.selectedPlants,
+                payload.plantingDate || new Date().toISOString(),
+                sessionZip,
+                targetDeviceId,
+                payload.purchaseDate
+            );
 
             if (!success) {
                 alert("Failed to save scanned garden. Please try again.");
@@ -83,7 +97,7 @@ export default function IntakePage() {
 
             // Add to history with Zip label
             const { saveGardenToHistory } = await import("@/lib/device");
-            saveGardenToHistory(targetDeviceId, `Zip ${payload.zip}`);
+            saveGardenToHistory(targetDeviceId, `Zip ${sessionZip}`);
 
             alert(`Success! Created care schedule for ${payload.selectedPlants.length} plants in Garden ${targetDeviceId}.`);
             router.push("/dashboard");
@@ -96,7 +110,7 @@ export default function IntakePage() {
 
     const [status, setStatus] = useState("");
 
-    const handleManualConfirm = async (payload: { plants: Plant[], date: string, zip: string }) => {
+    const handleManualConfirm = async (payload: { plants: Plant[], date: string, zip: string, purchaseDate?: string, starterSize?: string }) => {
         setStatus("Saving...");
         console.log("Starting Manual Confirm with payload:", payload);
         try {
@@ -146,6 +160,11 @@ export default function IntakePage() {
                             targetDeviceId = newCode;
                             saveDeviceId(newCode);
                             setDeviceId(newCode);
+                        } else {
+                            // User cancelled - ABORT
+                            setStatus("Error: Cancelled by user.");
+                            alert("Save cancelled. Please verify your zip code or switch gardens manually.");
+                            return;
                         }
                     }
                 }
@@ -155,7 +174,20 @@ export default function IntakePage() {
             const transactionId = `MANUAL-${Date.now().toString().slice(-6)}`;
             console.log("Creating sessions with transactionId:", transactionId);
 
-            const success = await createCareSessions(transactionId, payload.plants, payload.date, payload.zip, targetDeviceId);
+            // Enrich plants with manual data (starter size)
+            const enrichedPlants = payload.plants.map(p => ({
+                ...p,
+                potSize: payload.starterSize || undefined
+            }));
+
+            const success = await createCareSessions(
+                transactionId,
+                enrichedPlants,
+                payload.date,
+                payload.zip,
+                targetDeviceId,
+                payload.purchaseDate // Pass explicit purchase date if provided
+            );
 
             if (!success) {
                 console.error("createCareSessions returned false");

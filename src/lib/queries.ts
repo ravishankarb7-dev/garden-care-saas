@@ -174,25 +174,34 @@ export async function getPlantById(id: string): Promise<Plant | undefined> {
 }
 
 export async function createCareSessions(
-    receiptId: string,
+    receiptId: string, // Used for logging/deduplication context, or mapped to receipt_id in some schemas
     plants: Plant[],
-    date: string,
+    plantingDate: string,
     zip: string,
-    deviceId: string
+    deviceId: string,
+    purchaseDate?: string
 ): Promise<boolean> {
-    // Hardcoded Store ID (Store S1) for prototype
+    // Hardcoded Store ID (Store S1) for prototype, unless we have real store logic later
     const STORE_ID = "87661f59-fae5-5d6f-98fa-5880f4a14a42";
 
     const sessions = plants.map(plant => ({
         store_id: STORE_ID,
         store_sku_id: plant.skuId || null,
-        care_category_id: plant.uuid!, // Assert UUID exists as our logic ensures it for valid selections
-        receipt_id: deviceId, // Store Device ID as the Receipt ID (merging all plants to one device-garden)
-        planted_at: new Date(date).toISOString(),
+        care_category_id: plant.uuid!, // Assert UUID exists
+        receipt_id: deviceId, // Device ID as key
+        planted_at: new Date(plantingDate).toISOString(),
         zip: zip,
-        session_token: null, // Unused because it requires UUID
-        token_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // +1 year
-        window_days: 7 // Default window
+        session_token: null,
+        token_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        window_days: 7,
+
+        // Granular Data (New Columns)
+        purchase_price: plant.purchasePrice || null,
+        pot_size: plant.potSize || null,
+        purchase_date: purchaseDate ? new Date(purchaseDate).toISOString() : null,
+        // We could also save 'quantity' here if we expanded the table to specific item rows, 
+        // but for now 1 row = 1 plant logic implies we create multiple sessions or just track the first one.
+        // If query sends array of duplicate plants, we handle them.
     }));
 
     // 1. Fetch existing sessions for this device to prevent duplicates
@@ -201,15 +210,21 @@ export async function createCareSessions(
         .select('care_category_id, planted_at, store_sku_id')
         .eq('receipt_id', deviceId) as { data: any[] };
 
+    // Create a Set of "ID|SKU|DATE" keys for efficient lookup
     const existingSet = new Set(
-        existing?.map(e => `${e.care_category_id}|${e.store_sku_id || 'null'}`)
+        existing?.map(e => {
+            const dateStr = new Date(e.planted_at).toISOString().split('T')[0];
+            return `${e.care_category_id}|${e.store_sku_id || 'null'}|${dateStr}`;
+        })
     );
 
-    // 2. Filter out sessions that already exist (Same Plant Type, ANY Date)
+    // 2. Filter out sessions that already exist (Same Plant, Same Date)
     const newSessions = sessions.filter(s => {
-        const key = `${s.care_category_id}|${s.store_sku_id || 'null'}`;
+        const dateStr = new Date(s.planted_at).toISOString().split('T')[0];
+        const key = `${s.care_category_id}|${s.store_sku_id || 'null'}|${dateStr}`;
+
         if (existingSet.has(key)) {
-            console.log(`Skipping duplicate (singleton check): ${key}`);
+            console.log(`Skipping duplicate (same day check): ${key}`);
             return false;
         }
         return true;
@@ -362,7 +377,9 @@ export async function logCareAction(
     actionType: string,
     logDate: string,
     status: 'THRIVING' | 'CONCERN' | 'CRITICAL',
-    note: string
+    note: string,
+    soilMoisture?: 'WET' | 'MOIST' | 'DRY',
+    pestDetected?: boolean
 ): Promise<boolean> {
     const { error } = await supabase
         .from('care_logs')
@@ -371,7 +388,9 @@ export async function logCareAction(
             action_type: actionType,
             log_date: logDate,
             status,
-            note
+            note,
+            soil_moisture: soilMoisture,
+            pest_detected: pestDetected
         } as any, { onConflict: 'care_session_id, action_type, log_date' });
 
     if (error) {

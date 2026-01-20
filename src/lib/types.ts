@@ -19,6 +19,10 @@ export type Plant = {
     imageUrl?: string;
     careSchedule: CareTask[];
     troubleshooting: TroubleshootingItem[];
+    // Instance-specific properties (from receipt)
+    purchasePrice?: number;
+    potSize?: string;
+    quantity?: number;
 };
 
 export type WeatherAlert = {

@@ -26,10 +26,10 @@ export default function ChatAssistant({ zip, plants }: ChatAssistantProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Persistence: Load from Session Storage on Mount
+    // Persistence: Load from Local Storage on Mount (Hybrid Model)
     useEffect(() => {
-        const savedMessages = sessionStorage.getItem('sage_messages');
-        const savedState = sessionStorage.getItem('sage_isOpen');
+        const savedMessages = localStorage.getItem('sage_messages_v3'); // v3 forces new privacy warning
+        const savedState = localStorage.getItem('sage_isOpen');
 
         if (savedMessages) {
             setMessages(JSON.parse(savedMessages));
@@ -37,7 +37,7 @@ export default function ChatAssistant({ zip, plants }: ChatAssistantProps) {
             // Initial Greeting if no history
             setMessages([{
                 role: 'assistant',
-                content: "Hi! I'm Sage, your groundskeeper. How's the garden looking today? Is everything green, or do we have some yellowing leaves?"
+                content: "Hi! I'm Sage, your AI groundskeeper. 🌿\n\nI can help with watering, pests, and pruning. Just a heads up: I'm an AI, so please **don't share personal info** (like your address or real name) in this chat."
             }]);
         }
 
@@ -67,9 +67,9 @@ export default function ChatAssistant({ zip, plants }: ChatAssistantProps) {
     // Persistence: Save on Change
     useEffect(() => {
         if (messages.length > 0) {
-            sessionStorage.setItem('sage_messages', JSON.stringify(messages));
+            localStorage.setItem('sage_messages_v3', JSON.stringify(messages));
         }
-        sessionStorage.setItem('sage_isOpen', String(isOpen));
+        localStorage.setItem('sage_isOpen', String(isOpen));
     }, [messages, isOpen]);
 
     // Auto-scroll
@@ -147,10 +147,11 @@ export default function ChatAssistant({ zip, plants }: ChatAssistantProps) {
 
             // Fetch logs just-in-time
             let recentLogs = [];
+            let devId = "unknown";
             try {
                 const { getAllCareLogs } = await import("@/lib/queries");
                 const { getOrCreateDeviceId } = await import("@/lib/device");
-                const devId = getOrCreateDeviceId();
+                devId = getOrCreateDeviceId();
                 recentLogs = await getAllCareLogs(devId);
             } catch (e) {
                 console.warn("Failed to fetch logs for chat context", e);
@@ -177,6 +178,18 @@ export default function ChatAssistant({ zip, plants }: ChatAssistantProps) {
 
             const data = await res.json();
             setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
+
+            // Hybrid Beacon: Send Transcript for Insight Extraction (Silent Observer)
+            // Fire and forget - don't await
+            fetch('/api/agent/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: [...apiMessages, { role: 'assistant', content: data.message }],
+                    deviceId: devId
+                })
+            }).catch(err => console.error("Optimization Beacon failed", err));
+
         } catch (error) {
             setMessages(prev => [...prev, { role: 'assistant', content: "I'm having trouble connecting to the shed. Please check your internet connection." }]);
         } finally {
@@ -289,7 +302,7 @@ export default function ChatAssistant({ zip, plants }: ChatAssistantProps) {
                                 </Button>
                             </div>
                             <div className="text-[10px] text-center text-zinc-400 mt-2">
-                                Sage focuses on your plants' first 28 days of survival.
+                                Sage is an AI. Your chat stays on this device. We analyze topics to improve the app.
                             </div>
                         </div>
                     </Card>

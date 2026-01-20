@@ -18,22 +18,25 @@ interface ReceiptAnalysisFormProps {
 export type FinalReceiptPayload = {
     receiptId: string;
     purchaseDate: string;
+    plantingDate: string;
     storeName: string;
-    zip: string;
+    storeZip: string | null;
+    plantingZip: string; // New separate field
     city: string;
-    selectedPlants: any[]; // Full Plant objects
-    date: string;
+    selectedPlants: Plant[];
 };
 
 export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }: ReceiptAnalysisFormProps) {
     const [receiptId, setReceiptId] = useState(initialData.receiptId);
     const [purchaseDate, setPurchaseDate] = useState(initialData.purchaseDate);
+    const [plantingDate, setPlantingDate] = useState(initialData.purchaseDate);
     const [storeName, setStoreName] = useState(initialData.storeName);
-    const [zip, setZip] = useState("");
+    const [storeZip, setStoreZip] = useState(initialData.storeZip || "");
+    const [plantingZip, setPlantingZip] = useState(initialData.storeZip || ""); // Default to store zip
     const [city, setCity] = useState("");
 
-    // Zip Validation State
-    const [zipValid, setZipValid] = useState(false);
+    // Zip Validation State (for Planting Zip primarily)
+    const [zipValid, setZipValid] = useState(!!initialData.storeZip);
     const [verifyingZip, setVerifyingZip] = useState(false);
     const [zipError, setZipError] = useState("");
 
@@ -44,15 +47,15 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
             setZipError("");
 
             // Only check if it looks like a complete zip (5 digits)
-            if (!/^\d{5}$/.test(zip)) {
-                if (zip.length > 5) setZipError("Zip code must be 5 digits");
+            if (!/^\d{5}$/.test(plantingZip)) {
+                if (plantingZip.length > 5) setZipError("Zip code must be 5 digits");
                 return;
             }
 
             setVerifyingZip(true);
             try {
                 // Dry run API checks against OpenWeather (proxied)
-                const res = await fetch(`/api/weather?zip=${zip}`);
+                const res = await fetch(`/api/weather?zip=${plantingZip}`);
                 if (res.ok) {
                     setZipValid(true);
                 } else {
@@ -68,7 +71,7 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
 
         const timer = setTimeout(checkZip, 500); // 500ms debounce
         return () => clearTimeout(timer);
-    }, [zip]);
+    }, [plantingZip]);
 
 
     // State for items (Identified vs Unrecognized)
@@ -87,7 +90,6 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
         async function load() {
             try {
                 const plants = await getPlants();
-                // Filter out generic categories if desired, or keep all
                 setAllPlants(plants);
             } catch (err) {
                 console.error("Failed to load plants for autocomplete", err);
@@ -107,7 +109,7 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
     }, [editValue, editingIndex, allPlants]);
 
 
-    // Computed lists
+    // Computed items
     const identifiedItems = items.filter(i => i.matchedPlant);
     const unrecognizedItems = items.filter(i => !i.matchedPlant);
 
@@ -116,7 +118,6 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
         const newItems = [...items];
         newItems.splice(index, 1);
         setItems(newItems);
-        // If we were editing this one, stop
         if (editingIndex === index) {
             setEditingIndex(null);
             setEditValue("");
@@ -129,8 +130,7 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
         setEditValue(items[index].originalText);
     };
 
-    // Save manual text edit (if not picking from list, essentially renaming the raw text)
-    // OR if they pick from list (handled by selectSuggestion)
+    // Save manual text edit
     const saveManualEdit = (index: number) => {
         const newItems = [...items];
         const text = editValue.trim();
@@ -148,6 +148,7 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
         }
 
         newItems[index] = {
+            ...newItems[index], // Preserve price/pot info
             originalText: text,
             matchedPlant: match
         };
@@ -160,7 +161,7 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
     const selectSuggestion = (index: number, plant: Plant) => {
         const newItems = [...items];
         newItems[index] = {
-            originalText: items[index].originalText, // Keep original text for reference? Or update?
+            ...newItems[index], // Preserve price/pot info
             matchedPlant: {
                 id: plant.id,
                 name: plant.name
@@ -174,33 +175,73 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Convert matched items to full Plant objects
-        // We look up from `allPlants` (dynamic) first, then fallback to `PLANTS` (static)
+        // 1. Sanity Check: Planting Date (Must be within last 28 days)
+        const plantingTime = new Date(plantingDate).getTime();
+        const now = new Date().getTime();
+        const diffDays = (now - plantingTime) / (1000 * 3600 * 24);
+
+        if (diffDays > 28) {
+            alert("The planting date is too old (> 4 weeks ago). We focus on tracking new care cycles for fresh starts.");
+            return;
+        }
+
+        // 2. Change Detection & Confirmation
+        const dateChanged = plantingDate !== purchaseDate;
+        // Use loose equality for zips to handle nulls vs empty strings gracefully
+        const zipChanged = (plantingZip || "") !== (initialData.storeZip || "");
+
+        if (dateChanged || zipChanged) {
+            let msg = "Please confirm your changes:\n\n";
+            if (dateChanged) msg += `• Planting Date: ${plantingDate} (Receipt was ${purchaseDate})\n`;
+            if (zipChanged) msg += `• Planting Zip: ${plantingZip} (Receipt was ${initialData.storeZip || 'Unknown'})\n`;
+
+            msg += "\nProceed with these details?";
+
+            if (!window.confirm(msg)) {
+                return;
+            }
+        }
+
+        // Convert matched items to full Plant objects with instance data
         const finalPlants = identifiedItems.map(item => {
-            const found = allPlants.find(p => p.id === item.matchedPlant?.id) || PLANTS.find(p => p.id === item.matchedPlant?.id);
-            return found || {
-                id: item.matchedPlant?.id || "unknown",
-                name: item.matchedPlant?.name || "Unknown",
-                careSchedule: []
+            // Find base species data
+            const basePlant = allPlants.find(p => p.id === item.matchedPlant?.id) || PLANTS.find(p => p.id === item.matchedPlant?.id);
+
+            // Construct enriched object
+            const enrichedPlant: Plant = {
+                ...(basePlant || {
+                    id: item.matchedPlant?.id || "unknown",
+                    name: item.matchedPlant?.name || "Unknown",
+                    botanicalName: "Unknown",
+                    careSchedule: [],
+                    troubleshooting: []
+                }),
+                // Append instance data
+                purchasePrice: item.price !== null ? item.price : undefined,
+                potSize: item.potSize !== null ? item.potSize : undefined,
+                quantity: item.quantity || 1
             };
+
+            return enrichedPlant;
         });
 
         onConfirm({
             receiptId,
             purchaseDate,
+            plantingDate,
             storeName,
-            zip,
+            storeZip, // Legacy payload field, optional
+            plantingZip,
             city,
-            selectedPlants: finalPlants,
-            date: purchaseDate
+            selectedPlants: finalPlants
         });
     };
 
     return (
-        <form onSubmit={handleSubmit} style={{ maxWidth: "600px", margin: "0 auto" }}>
+        <form onSubmit={handleSubmit} style={{ maxWidth: "700px", margin: "0 auto" }}>
             <div className="mb-8">
                 <h2 className="text-2xl font-bold mb-2 text-gray-900">Review Scan Results</h2>
-                <p className="text-gray-500">We extracted text from your receipt. Please verify the plants found.</p>
+                <p className="text-gray-500">Verify the store details and plants found. You can adjust the planting date if you waited to plant.</p>
             </div>
 
             {/* Receipt Details Card */}
@@ -210,25 +251,49 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
                     <input type="text" value={receiptId} onChange={e => setReceiptId(e.target.value)} className="w-full p-2 border rounded-md" />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                    <input type="date" value={purchaseDate} onChange={e => setPurchaseDate(e.target.value)} className="w-full p-2 border rounded-md" />
-                </div>
-                <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Store</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Store Name</label>
                     <input type="text" value={storeName} onChange={e => setStoreName(e.target.value)} className="w-full p-2 border rounded-md" />
                 </div>
+
+                {/* DATES */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Date</label>
+                    <input type="date" value={purchaseDate} onChange={e => setPurchaseDate(e.target.value)} max={new Date().toISOString().split('T')[0]} className="w-full p-2 border rounded-md" />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Planting Date</label>
+                    <input
+                        type="date"
+                        value={plantingDate}
+                        onChange={e => setPlantingDate(e.target.value)}
+                        max={new Date().toISOString().split('T')[0]} // Block future dates
+                        className="w-full p-2 border rounded-md bg-green-50 border-green-200"
+                        title="When did you put them in soil?"
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Store Zip Code</label>
+                    <input
+                        type="text"
+                        value={storeZip}
+                        onChange={e => setStoreZip(e.target.value)}
+                        placeholder="Optional"
+                        className="w-full p-2 border rounded-md text-gray-600 bg-gray-100"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-bold text-gray-800 mb-1">Planting Zip Code</label>
                     <div className="relative">
                         <input
                             type="text"
-                            value={zip}
+                            value={plantingZip}
                             onChange={e => {
                                 const val = e.target.value.replace(/\D/g, '').slice(0, 5);
-                                setZip(val);
+                                setPlantingZip(val);
                             }}
-                            placeholder="Required"
-                            className={`w-full p-2 border rounded-md ${zipError ? 'border-red-500' : ''}`}
+                            placeholder="Home Zip"
+                            className={`w-full p-2 border rounded-md ${zipError ? 'border-red-500' : 'border-green-300 ring-1 ring-green-100'}`}
                             required
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -260,12 +325,17 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
                         {identifiedItems.map((item, idx) => (
                             <div key={idx} className="flex items-center justify-between p-4 bg-white border border-green-200 rounded-lg shadow-sm">
                                 <div className="flex items-center gap-3">
-                                    <div className="bg-green-100 p-2 rounded-full text-green-700">
+                                    <div className="bg-green-100 p-2 rounded-full text-green-700 h-fit">
                                         <Tag size={16} />
                                     </div>
                                     <div>
                                         <div className="font-bold text-gray-900">{item.matchedPlant?.name}</div>
                                         <div className="text-xs text-gray-400">Scanned: "{item.originalText}"</div>
+                                        <div className="flex gap-2 mt-1">
+                                            {item.potSize && <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded text-gray-600 border border-gray-200" title="Starter Size">{item.potSize}</span>}
+                                            {item.price && <span className="text-xs bg-green-50 px-1.5 py-0.5 rounded text-green-700 font-mono border border-green-100">${item.price.toFixed(2)}</span>}
+                                            {item.quantity > 1 && <span className="text-xs bg-blue-50 px-1.5 py-0.5 rounded text-blue-700 font-bold border border-blue-100">x{item.quantity}</span>}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="text-green-600">
@@ -277,7 +347,7 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
                 )}
             </div>
 
-            {/* UNRECOGNIZED ITEMS */}
+            {/* UNRECOGNIZED ITEMS (Same as before, simplified for this replace) */}
             {unrecognizedItems.length > 0 && (
                 <div className="mb-8 p-4 bg-orange-50 border border-orange-100 rounded-xl relative">
                     <h3 className="text-md font-bold mb-2 flex items-center gap-2 text-orange-800">
@@ -350,7 +420,14 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
                                     ) : (
                                         <div className="flex items-center gap-2 group">
                                             <div className="flex-1 p-3 bg-white border border-orange-200 rounded-lg flex justify-between items-center shadow-sm">
-                                                <span className="text-sm text-gray-600 font-mono truncate max-w-[200px]">{item.originalText}</span>
+                                                <div>
+                                                    <span className="text-sm text-gray-600 font-mono truncate max-w-[200px] block">{item.originalText}</span>
+                                                    {/* Display extracted price/qty for unrecognized items too */}
+                                                    <div className="flex gap-2 mt-0.5">
+                                                        {item.price && <span className="text-[10px] bg-orange-100 text-orange-800 px-1 rounded border border-orange-200">${item.price}</span>}
+                                                        {item.potSize && <span className="text-[10px] bg-gray-100 text-gray-600 px-1 rounded border border-gray-200" title="Starter Size">{item.potSize}</span>}
+                                                    </div>
+                                                </div>
                                                 <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                                     <button type="button" onClick={() => startEdit(idx)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full" title="Match to Plant">
                                                         <Edit2 size={14} />
@@ -368,7 +445,6 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
                     </div>
                 </div>
             )}
-
 
             <div className="flex gap-4 mt-8 pt-4 border-t">
                 <button

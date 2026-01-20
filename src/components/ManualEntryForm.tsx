@@ -15,8 +15,10 @@ import { cn } from "@/lib/utils";
 
 export interface ManualEntryPayload {
     plants: Plant[];
-    date: string;
+    date: string; // Planting Date
     zip: string;
+    purchaseDate?: string;
+    starterSize?: string;
 }
 
 interface ManualEntryFormProps {
@@ -33,6 +35,8 @@ export default function ManualEntryForm({ onConfirm, onCancel }: ManualEntryForm
 
     // Use Date object for Shadcn Calendar
     const [date, setDate] = useState<Date | undefined>(new Date());
+    const [purchaseDate, setPurchaseDate] = useState<Date | undefined>(undefined);
+    const [starterSize, setStarterSize] = useState("");
 
     const [zip, setZip] = useState("");
     const [zipValid, setZipValid] = useState(false);
@@ -126,10 +130,22 @@ export default function ManualEntryForm({ onConfirm, onCancel }: ManualEntryForm
             return;
         }
 
+        // Sanity Check: Date must be within last 28 days
+        const plantingTime = date.getTime();
+        const now = new Date().getTime();
+        const diffDays = (now - plantingTime) / (1000 * 3600 * 24);
+
+        if (diffDays > 28) {
+            alert("The planting date is too old (> 4 weeks ago). We focus on tracking new care cycles for fresh starts.");
+            return;
+        }
+
         onConfirm({
             plants: selectedPlants,
             date: date.toISOString(), // Standardize to ISO
-            zip
+            zip,
+            purchaseDate: purchaseDate ? purchaseDate.toISOString() : undefined,
+            starterSize: starterSize || undefined
         });
     };
 
@@ -241,10 +257,49 @@ export default function ManualEntryForm({ onConfirm, onCancel }: ManualEntryForm
                                             mode="single"
                                             selected={date}
                                             onSelect={setDate}
+                                            disabled={(date) => date > new Date()} // Block future dates
                                             initialFocus
                                         />
                                     </PopoverContent>
                                 </Popover>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <label className="block text-sm font-medium text-zinc-700">Purchased On (Optional)</label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-full h-12 justify-start text-left font-normal border-zinc-200",
+                                                !purchaseDate && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4 text-zinc-400" />
+                                            {purchaseDate ? format(purchaseDate, "PPP") : <span>Same as planting date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={purchaseDate}
+                                            onSelect={setPurchaseDate}
+                                            disabled={(date) => date > new Date()} // Block future dates
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <label className="block text-sm font-medium text-zinc-700">Starter Size (Optional)</label>
+                                <Input
+                                    type="text"
+                                    placeholder="e.g. 4 inch, 1 Gal"
+                                    value={starterSize}
+                                    onChange={e => setStarterSize(e.target.value)}
+                                    className="h-12 text-base"
+                                />
                             </div>
 
                             <div className="flex flex-col gap-1.5 relative">
