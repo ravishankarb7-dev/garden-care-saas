@@ -11,5 +11,6 @@ export default defineConfig({
             '@': path.resolve(__dirname, './src'),
         },
         setupFiles: './vitest.setup.ts',
+        exclude: ['**/node_modules/**', '**/dist/**', 'tests/e2e/**'],
     },
 });
