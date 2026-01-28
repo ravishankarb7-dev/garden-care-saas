@@ -39,7 +39,7 @@ describe('SmartCareNarrative', () => {
         );
 
         // Expect loading state first
-        expect(screen.getByText(/consulting/i)).toBeInTheDocument();
+        expect(screen.getByText(/Analyzing/i)).toBeInTheDocument();
 
         // Wait for fetch to resolve and state to update
         await waitFor(() => {
