@@ -12,6 +12,7 @@ vi.mock('lucide-react', () => ({
 describe('SmartCareNarrative', () => {
     beforeEach(() => {
         vi.resetAllMocks();
+        sessionStorage.clear();
     });
 
     it('should disable care tasks (invoke onRiskChange) when Agent returns POSTPONE', async () => {
