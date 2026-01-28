@@ -2,7 +2,7 @@
 
 ## 1. Introduction: The Garden Care Philosophy
 Welcome to **Garden Care**. Our mission is simple: **Stop plants from dying in the first 28 days.**
-Most plant failures happen because of "transplant shock" or improper stabilization. We don't just give you a generic calendar; we give you a **survival plan** adapted to your local weather.
+Most plant failures happen because of "transplant shock" or improper planting phase care. We don't just give you a generic calendar; we give you a **survival plan** adapted to your local weather.
 
 ---
 
@@ -36,19 +36,23 @@ Your dashboard shows a 28-day countdown for each plant.
 - **Check**: Look for specific signs like wilting or spots.
 - **Feed**: *Only* when the schedule says so. Fertilizing a stressed plant is like feeding a steak to a flu patient—it hurts them.
 
-### "Care Paused" Mode
-- If Sage detects **Extreme Weather** (e.g., Frost, Heat Dome), specific tasks will be **Disabled**.
-- You will see a "Care Paused" banner. **Trust this.** Doing the right thing at the wrong time is fatal.
-- **Triggers**: Temp ≤ 32°F (Freeze) or Temp ≥ 95°F (Heat). Sage checks all your garden locations automatically.
+### "Care Paused" Mode (Monitoring Mode)
+- **What it means**: The system has detected unsafe conditions for physical intervention (e.g., Freeze, Heat Dome).
+- **Action**: Switch from *Activity Mode* to *Monitoring Mode*.
+    -   **DO**: Check soil moisture, look for pests, log observations, ask Sage.
+    -   **DO NOT**: Water, Feed, Prune, or Transplant.
+- **Why?** Doing the right thing at the wrong time (e.g., fertilizing in a heatwave) is fatal.
+- **Triggers**: Temp ≤ 32°F (Freeze), Temp ≥ 95°F (Heat), or Waterlogged Soil.
 
 ---
 
 ## 5. Daily Check-ins (Journaling)
 Track your plant's health on its specific page.
 ### Statuses
-- 🌿 **All Good**: Plant looks happy.
-- 🍂 **Watch**: Something is off (minor yellowing, droop). Keep an eye on it.
-- 🥀 **Act**: Immediate issue (pests, severe wilt, stem collapse). **Action Required.**
+### Statuses
+- 🌿 **Stable**: Plant looks consistent with the last check. No issues.
+- 🍂 **Monitor**: Something looks different (minor yellowing, droop). Observe closely.
+- 🥀 **Intervention Required**: Clear sign of failure (pests, severe wilt, stem collapse). **Only use this if conditions match specific warning signs.**
 
 ### The Journal
 - Use the text field to note details: *"New leaf unfurling"* or *"Soil feels soggy."*
@@ -121,37 +125,39 @@ Stick your finger 2 inches into the soil.
 
 ---
 
-## 9. The Trophy Shed (Gamification)
-Your gardening progress is tracked in your **Profile (Trophy Shed)**.
-- **XP (Experience Points)**: Earn XP by adding plants, maintaining streaks, and logging care.
-- **Levels**: Grow from a "Seedling" (Lvl 1) to a "Master Groundskeeper" (Lvl 5).
-- **Streaks**: Maintain a daily care streak to earn bonus badges.
-- **Badges**: Unlock special achievements like:
-    -   **First Bloomer**: Adding your first plant.
-    -   **The Journalist**: Writing detailed care notes.
-    -   **Survivor**: Keeping a plant alive for 28+ days.
+## 9. Planting Phase Dashboard (Milestones)
+Your garden's health is tracked in the **Planting Phase Dashboard**.
+- **Day Tracker**: We track the "Days since planting" for your oldest active plant. The first 28 days are the critical "Planting Phase."
+- **Milestones**: Instead of points, you earn biological confirmations of stability:
+    -   **First Plant Registered**: You've started the journey.
+    -   **7 Days Without Intervention**: You resisted the urge to over-care.
+    -   **Roots Anchoring (Day 14)**: The critical failure window has passed.
+    -   **Planting Phase Complete (Day 28)**: Your plant has graduated to seasonal care.
 
 ---
 
-## 10. Phases of Growth (P1, P2, P4)
-Understanding where your plant is in its lifecycle helps you ignore the wrong advice.
+## 10. Priority Levels (P1–P4)
+We do not use "Phases of Growth." We use **Priority Levels** to decide what matters right now.
 
-### P1: Survival Mode (Days 0-14)
-*   **Goal**: Stop the plant from dying.
-*   **Actions**: Shade, Water, Monitor.
-*   **Forbidden**: No fertilizer, No pruning, No transplanting.
+### P1: Survival-Critical Guardrails (Always Enforced)
+*   **Definition**: Conditions that threaten immediate death. **Overrides all other advice.**
+*   **Triggers**: Freeze, Extreme Heat, Drought, Transplant Shock (Days 0-14).
+*   **Mandate**: Stop everything. Protect the plant.
+*   **Forbidden**: No fertilizer. No pruning. No transplanting.
 
-### P2: Establishment (Days 15-28)
-*   **Goal**: Root growth.
-*   **Signals of Success**:
-    *   **New Terminal Growth**: Tiny new green shoots appearing at the tips branches.
-    *   **Perkiness**: Leaves hold themselves up firmly in the morning.
-    *   **Vegetables**: Warm-season crops (Tomatos/Peppers) need soil temps > 60°F to succeed here.
+### P2: Stabilization Support (The "Rooting" Rules)
+*   **Definition**: Safe conditions for establishment. Focus on root anchoring.
+*   **Timing**: Once P1 risks are cleared (typically Days 0-28).
+*   **Goal**: Force roots deep.
+*   **Action**: Deep watering (if dry). Mulching. Patience.
 
-### P4: Maintenance & Transition (Day 29+)
-*   **Goal**: Long-term structural health.
-*   **Transition**: You graduate from "Daily Checks" to "Weekly Maintenance".
-*   **Pruning Rules**:
-    *   **Deciduous Shrubs**: Prune "Old Wood" (dead/grey) to encourage "New Wood" (green/red).
-    *   **Annuals**: "Deadhead" (pinch off) spent flowers to force more blooms.
+### P3: Optimization (Optional Improvements)
+*   **Definition**: Post-risk tweaks for better yield or bloom.
+*   **Timing**: Only after Day 28 AND if the plant is 100% stable.
+*   **Action**: Fertilizer (weak dose), detailed pruning, cosmetic improvements.
+*   **Rule**: If in doubt, skip P3.
+
+### P4: Long-Term Reference (Advanced)
+*   **Definition**: Yearly cycles and mature maintenance (Year 2+).
+*   **Action**: Seasonal cutbacks, division, soil amendment.
 

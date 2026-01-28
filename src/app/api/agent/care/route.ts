@@ -6,23 +6,23 @@ import { getWeatherData } from "@/lib/weather";
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { plantId, plantName, zip } = body;
+        const { plantId, plantName, zip, isPlanted, weatherContext } = body;
 
         if (!plantId || !zip) {
             return NextResponse.json({ error: "Missing plantId or zip" }, { status: 400 });
         }
 
         // 1. Get Plant Data
-        let plant = getPlantById(plantId);
+        let plant: any = getPlantById(plantId);
 
-        // Fallback for custom/unknown plants (e.g. from receipt scan that aren't in static DB yet)
+        // Fallback for custom/unknown plants
         if (!plant && plantName) {
             console.log(`[API] Plant ID ${plantId} not found, using fallback name: ${plantName}`);
             plant = {
                 id: plantId,
                 name: plantName,
                 botanicalName: "Unknown",
-                careSchedule: [], // No schedule needed for Agent to generate narrative via PDF
+                careSchedule: [],
                 troubleshooting: []
             };
         }
@@ -31,11 +31,27 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: `Plant not found: ${plantId}` }, { status: 404 });
         }
 
-        // 2. Get Weather Data (Direct function call instead of HTTP fetch)
+        // Add context
+        plant.isPlanted = !!isPlanted;
+
+        // 2. Get Weather Data
+        // 2. Get Weather Data
         const weather = await getWeatherData(zip);
 
-        // 3. Generate Narrative (Structured)
-        const agentResponse = await generateCareNarrative(plant, weather);
+        // 3. Get Recent Care Logs (Context Injection)
+        const { getCareLogs } = await import("@/lib/queries");
+        const logs = await getCareLogs(plantId);
+
+        // Format logs for agent consumption
+        const cleanLogs = logs.map((l: any) => ({
+            date: l.log_date,
+            action: l.action_type,
+            status: l.status,
+            note: l.note
+        }));
+
+        // 4. Generate Narrative
+        const agentResponse = await generateCareNarrative(plant, weather, weatherContext, cleanLogs);
 
         return NextResponse.json(agentResponse);
 

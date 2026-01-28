@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useState, Suspense } from "react";
 import Header from "@/components/Header";
-import { Sprout, Calendar, Droplets, Bug, Leaf, Trash2 } from "lucide-react";
+import { Sprout, Calendar, Droplets, Bug, Leaf, MoreVertical, History, AlertTriangle, XCircle } from "lucide-react";
+import OutcomeReportModal from "@/components/OutcomeReportModal";
+import CycleAutopsyReport from "@/components/CycleAutopsyReport";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/Dialog";
 import { CareTask } from "@/lib/types";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
@@ -11,8 +14,8 @@ import { getOrCreateDeviceId, saveDeviceId, isValidGardenCode } from "@/lib/devi
 import { useSearchParams, useRouter } from "next/navigation";
 import { generateGoogleCalendarLink, downloadICS } from "@/lib/calendar";
 import SmartCareNarrative from "@/components/SmartCareNarrative";
-import SageAlertBanner, { AlertType, AlertLevel } from "@/components/SageAlertBanner";
-import { GamificationHUD } from "@/components/GamificationHUD";
+import SageAlertBanner from "@/components/SageAlertBanner";
+import type { AlertType, AlertLevel } from "@/components/SageAlertBanner";
 import { getUserStats, UserStats } from "@/lib/queries";
 
 interface DashboardPlant {
@@ -32,11 +35,17 @@ interface DashboardPlant {
 
 function DashboardContent() {
     const [myPlants, setMyPlants] = useState<DashboardPlant[]>([]);
+    const [archivedPlants, setArchivedPlants] = useState<DashboardPlant[]>([]);
+    const [viewMode, setViewMode] = useState<'active' | 'history'>('active');
     const [loading, setLoading] = useState(true);
     const [deviceId, setDeviceId] = useState("");
     const [calendarOpen, setCalendarOpen] = useState<string | null>(null);
     const [disabledPlants, setDisabledPlants] = useState<Record<string, boolean>>({});
     const [weatherAlert, setWeatherAlert] = useState<{ type: AlertType, level: AlertLevel, message: string } | null>(null);
+
+    const [outcomeModalOpen, setOutcomeModalOpen] = useState<string | null>(null);
+    const [reportModalOpen, setReportModalOpen] = useState<string | null>(null);
+    const [menuOpen, setMenuOpen] = useState<string | null>(null);
     const [userStats, setUserStats] = useState<UserStats | null>(null);
 
     const searchParams = useSearchParams();
@@ -68,9 +77,17 @@ function DashboardContent() {
                 setUserStats(stats);
                 const staticPlants = await getPlants();
 
-                const hydrated = sessions.map(session => {
+                const active: DashboardPlant[] = [];
+                const archived: DashboardPlant[] = [];
+
+                sessions.forEach(session => {
                     const categoryData = session.care_category;
                     const skuData = session.store_sku;
+                    const outcome = session.outcome;
+
+                    // Check if archived (has outcome)
+                    // outcome might be an array or object depending on schema 1:1 vs 1:M
+                    const isArchived = Array.isArray(outcome) ? outcome.length > 0 : !!outcome;
 
                     let matchedPlant = null;
                     if (session.store_sku_id) {
@@ -87,7 +104,7 @@ function DashboardContent() {
                     const schedule = matchedPlant?.careSchedule || [];
                     const nextWaterDate = getNextActionDate(schedule, "Water", plantedDate);
 
-                    return {
+                    const plantObj = {
                         id: session.id,
                         plantId: matchedPlant?.id || categoryData?.key,
                         name: matchedPlant?.name || skuData?.display_name || categoryData?.label || "Unknown Plant",
@@ -101,9 +118,16 @@ function DashboardContent() {
                         zip: session.zip,
                         isEstablished: (new Date().getTime() - plantedDate.getTime()) / (1000 * 60 * 60 * 24) > 28
                     };
+
+                    if (isArchived) {
+                        archived.push(plantObj);
+                    } else {
+                        active.push(plantObj);
+                    }
                 });
 
-                setMyPlants(hydrated);
+                setMyPlants(active);
+                setArchivedPlants(archived);
             } catch (err) {
                 console.error("Failed to load dashboard:", err);
             } finally {
@@ -161,6 +185,29 @@ function DashboardContent() {
         }
     }, [myPlants]);
 
+    const handleConclude = async (plantId: string, data: any) => {
+        const plant = myPlants.find(p => p.id === plantId);
+        if (!plant) return;
+
+        const { concludeCareSession } = await import("@/lib/reporting");
+
+        await concludeCareSession({
+            sessionId: plantId,
+            storeId: '00000000-0000-0000-0000-000000000000', // FIXME: Add storeId to DashboardPlant definition!
+            type: data.outcomeType,
+            source: 'manual_review',
+            confidence: data.confidence,
+            notes: data.notes
+        });
+
+        // Optimistic Move
+        setMyPlants(prev => prev.filter(p => p.id !== plantId));
+        setArchivedPlants(prev => [plant, ...prev]);
+
+        setOutcomeModalOpen(null);
+        setReportModalOpen(plantId);
+    };
+
     function getNextActionDate(schedule: any[], actionType: string, plantedDate: Date): Date | null {
         if (!schedule || schedule.length === 0) return null;
         const now = new Date();
@@ -209,7 +256,7 @@ function DashboardContent() {
     };
 
     return (
-        <div className="min-h-screen bg-zinc-50 font-sans" onClick={() => setCalendarOpen(null)}>
+        <div className="min-h-screen bg-zinc-50 font-sans" onClick={() => { setMenuOpen(null); setCalendarOpen(null); }}>
             <Header />
 
             {/* Sage Alert Banner */}
@@ -239,16 +286,23 @@ function DashboardContent() {
                             <h1 className="text-3xl font-bold tracking-tight text-zinc-900 mb-2 font-serif">Your Canopy</h1>
                             <p className="text-zinc-500 mb-4">Manage your care schedules and plant health.</p>
 
-                            {/* Gamification HUD */}
-                            {userStats && (
-                                <div className="mb-4">
-                                    <GamificationHUD
-                                        xp={userStats.xp}
-                                        level={userStats.level}
-                                        streak={userStats.streak_days}
-                                    />
-                                </div>
-                            )}
+                            {/* View Toggle */}
+                            <div className="flex bg-zinc-100 rounded-lg p-1 w-fit">
+                                <button
+                                    onClick={() => setViewMode('active')}
+                                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'active' ? 'bg-white shadow-sm text-zinc-900' : 'text-zinc-500 hover:text-zinc-700'}`}
+                                >
+                                    Active Garden
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('history')}
+                                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'history' ? 'bg-white shadow-sm text-zinc-900' : 'text-zinc-500 hover:text-zinc-700'}`}
+                                >
+                                    History ({archivedPlants.length})
+                                </button>
+                            </div>
+
+
                         </div>
 
                         {/* Device ID Helper */}
@@ -275,6 +329,44 @@ function DashboardContent() {
                     <div className="flex justify-center p-16">
                         <div className="w-8 h-8 border-4 border-zinc-200 border-t-primary rounded-full animate-spin"></div>
                     </div>
+                ) : viewMode === 'history' ? (
+                    // HISTORY VIEW
+                    archivedPlants.length === 0 ? (
+                        <Card className="text-center p-12 border-dashed border-2 border-zinc-200 shadow-none bg-zinc-50/50">
+                            <p className="text-zinc-500">No archived plants yet. Conclude a cycle to see it here.</p>
+                        </Card>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {archivedPlants.map((item) => (
+                                <Card key={item.id} className="flex flex-col h-full border-zinc-200 opacity-75 hover:opacity-100 transition-opacity bg-zinc-50">
+                                    <div className="p-6 flex items-start gap-4">
+                                        <div className="w-16 h-16 rounded-xl bg-zinc-200 grayscale flex items-center justify-center overflow-hidden flex-shrink-0 text-zinc-400">
+                                            {item.imageUrl ? (
+                                                <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <Sprout size={32} />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <h3 className="font-serif font-bold text-lg text-zinc-700 leading-tight mb-1">
+                                                {item.name}
+                                            </h3>
+                                            <p className="text-xs text-zinc-500 italic">Archived Record</p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-auto p-6 pt-0">
+                                        <Button
+                                            variant="outline"
+                                            className="w-full border-zinc-300 text-zinc-700 hover:bg-white"
+                                            onClick={() => setReportModalOpen(item.id)}
+                                        >
+                                            <History size={16} className="mr-2" /> View Lifecycle Report
+                                        </Button>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    )
                 ) : myPlants.length === 0 ? (
                     <div className="flex flex-col gap-8">
                         <Card className="text-center p-12 border-dashed border-2 border-zinc-200 shadow-none bg-zinc-50/50">
@@ -311,23 +403,46 @@ function DashboardContent() {
                                         <p className="text-xs text-zinc-500 italic">Added {item.plantedAt}</p>
                                     </div>
 
-                                    {/* Delete Button */}
-                                    <button
-                                        className="absolute top-4 right-4 p-2 bg-white/80 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-full border border-zinc-200 shadow-sm transition-all duration-200 z-10"
-                                        title="Remove Plant"
-                                        onClick={async (e) => {
-                                            e.stopPropagation();
-                                            if (confirm("Remove this plant from your garden?")) {
-                                                const { deleteCareSession } = await import("@/lib/queries");
-                                                const success = await deleteCareSession(item.id);
-                                                if (success) {
-                                                    setMyPlants(prev => prev.filter(p => p.id !== item.id));
-                                                }
-                                            }
-                                        }}
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
+                                    {/* MENU BUTTON */}
+                                    <div className="absolute top-2 right-2 z-20">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setMenuOpen(menuOpen === item.id ? null : item.id);
+                                            }}
+                                            className="p-1.5 rounded-full hover:bg-zinc-100 text-zinc-400 transition-colors"
+                                        >
+                                            <MoreVertical size={16} />
+                                        </button>
+
+                                        {menuOpen === item.id && (
+                                            <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-zinc-200 py-1 z-30 animate-in fade-in zoom-in-95 duration-200 origin-top-right">
+                                                <button
+                                                    className="w-full text-left px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 flex items-center gap-2"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setMenuOpen(null);
+                                                        setReportModalOpen(item.id);
+                                                    }}
+                                                >
+                                                    <History size={14} /> View History
+                                                </button>
+
+                                                <div className="my-1 border-t border-zinc-100"></div>
+
+                                                <button
+                                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setMenuOpen(null);
+                                                        setOutcomeModalOpen(item.id);
+                                                    }}
+                                                >
+                                                    <XCircle size={14} /> Conclude Cycle
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Smart Agent Narrative */}
@@ -347,8 +462,8 @@ function DashboardContent() {
                                 <div className="px-6 pb-6 mt-auto">
                                     {disabledPlants[item.id] ? (
                                         <div className="bg-amber-50 rounded-lg border border-amber-100 p-4 text-center mb-6">
-                                            <p className="text-xs font-bold text-amber-800 uppercase tracking-widest mb-1">Care Paused</p>
-                                            <p className="text-xs text-amber-700">Actions disabled due to safety warning.</p>
+                                            <p className="text-xs font-bold text-amber-800 uppercase tracking-widest mb-1">Monitoring Mode 👁️</p>
+                                            <p className="text-xs text-amber-700">Conditions risky. Observe only.</p>
                                         </div>
                                     ) : item.isEstablished ? (
                                         <div className="bg-emerald-50 rounded-lg border border-emerald-100 p-4 text-center mb-6">
@@ -377,22 +492,11 @@ function DashboardContent() {
                                     )}
 
                                     <div className="flex items-center gap-2">
-                                        {disabledPlants[item.id] ? (
-                                            <Button
-                                                variant="secondary"
-                                                fullWidth
-                                                className="bg-zinc-100 text-zinc-400 cursor-not-allowed border-0 hover:bg-zinc-100 placeholder-opacity-50"
-                                                disabled
-                                            >
+                                        <Link href={`/my-plants/${item.id}`} className="flex-1">
+                                            <Button variant="secondary" fullWidth className="bg-zinc-100 text-zinc-900 hover:bg-zinc-200 border-0">
                                                 View Care
                                             </Button>
-                                        ) : (
-                                            <Link href={`/my-plants/${item.id}`} className="flex-1">
-                                                <Button variant="secondary" fullWidth className="bg-zinc-100 text-zinc-900 hover:bg-zinc-200 border-0">
-                                                    View Care
-                                                </Button>
-                                            </Link>
-                                        )}
+                                        </Link>
 
                                         {/* Calendar Button - Disabled if Paused */}
                                         {!disabledPlants[item.id] && (
@@ -438,6 +542,27 @@ function DashboardContent() {
                     </div>
                 )}
             </main>
+            {/* MODALS */}
+            {outcomeModalOpen && (
+                <OutcomeReportModal
+                    isOpen={!!outcomeModalOpen}
+                    onClose={() => setOutcomeModalOpen(null)}
+                    plantName={myPlants.find(p => p.id === outcomeModalOpen)?.name || "Plant"}
+                    onConfirm={(data) => handleConclude(outcomeModalOpen, data)}
+                />
+            )}
+
+            {/* Report Modal Wrapper */}
+            <Dialog open={!!reportModalOpen} onOpenChange={() => setReportModalOpen(null)}>
+                <DialogContent className="max-w-2xl h-[80vh] flex flex-col p-0 overflow-hidden bg-white" aria-describedby={undefined}>
+                    <DialogTitle className="sr-only">Plant Lifecycle Report</DialogTitle>
+                    <CycleAutopsyReport
+                        sessionId={reportModalOpen!}
+                        plantName={myPlants.find(p => p.id === reportModalOpen)?.name || archivedPlants.find(p => p.id === reportModalOpen)?.name || "Unknown Plant"}
+                        onClose={() => setReportModalOpen(null)}
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

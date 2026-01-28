@@ -57,47 +57,13 @@ export async function getPlants(): Promise<Plant[]> {
             botanicalName: sku.sku, // Show SKU in botanical name field for visibility
             imageUrl: staticData?.imageUrl,
 
-            careSchedule: staticData?.careSchedule?.length ? staticData.careSchedule : assignDefaultSchedule(sku.display_name || sku.sku || ""),
-            troubleshooting: staticData?.troubleshooting?.length ? staticData.troubleshooting : assignDefaultTroubleshooting(sku.display_name || sku.sku || ""),
+            careSchedule: staticData?.careSchedule?.length ? staticData.careSchedule : [],
+            troubleshooting: staticData?.troubleshooting?.length ? staticData.troubleshooting : [],
             // You might add a flag here like isSku: true if needed
         };
     });
 
     return [...categoryPlants, ...skuPlants];
-}
-
-// Helper to fuzzy match schedules based on keywords if exact ID match fails
-function assignDefaultSchedule(name: string): any[] {
-    const n = name.toLowerCase();
-    const PLANTS = STATIC_DATA;
-
-
-    if (n.includes('tomato') || n.includes('pepper') || n.includes('vegetable') || n.includes('lettuce') || n.includes('cucumber')) {
-        return PLANTS.find((p: any) => p.id === 'vegetable-starts')?.careSchedule || [];
-    }
-    if (n.includes('rose') || n.includes('hydrangea') || n.includes('lilac') || n.includes('azalea')) {
-        return PLANTS.find((p: any) => p.id === 'deciduous-flowering-shrubs')?.careSchedule || [];
-    }
-    if (n.includes('boxwood') || n.includes('holly') || n.includes('yew') || n.includes('juniper') || n.includes('pine')) {
-        return PLANTS.find((p: any) => p.id === 'evergreen-shrubs')?.careSchedule || [];
-    }
-    if (n.includes('petunia') || n.includes('marigold') || n.includes('begonia') || n.includes('geranium') || n.includes('impatiens')) {
-        return PLANTS.find((p: any) => p.id === 'annual-flowering-plants')?.careSchedule || [];
-    }
-    if (n.includes('hosta') || n.includes('peony') || n.includes('daylily') || n.includes('cone') || n.includes('daisy')) {
-        return PLANTS.find((p: any) => p.id === 'perennial-flowering-plants')?.careSchedule || [];
-    }
-    return [];
-}
-
-function assignDefaultTroubleshooting(name: string): any[] {
-    const n = name.toLowerCase();
-    const PLANTS = STATIC_DATA;
-
-    if (n.includes('tomato') || n.includes('pepper') || n.includes('vegetable')) {
-        return PLANTS.find((p: any) => p.id === 'vegetable-starts')?.troubleshooting || [];
-    }
-    return [];
 }
 
 export async function getPlantById(id: string): Promise<Plant | undefined> {
@@ -145,8 +111,8 @@ export async function getPlantById(id: string): Promise<Plant | undefined> {
                     name: sku.display_name || sku.sku, // Use SKU name
                     botanicalName: sku.sku, // Storing SKU in botanical for ref
                     imageUrl: staticData?.imageUrl || "/images/placeholder.png",
-                    careSchedule: staticData?.careSchedule?.length ? staticData.careSchedule : assignDefaultSchedule(matchedCategory!.label || ""),
-                    troubleshooting: staticData?.troubleshooting?.length ? staticData.troubleshooting : assignDefaultTroubleshooting(matchedCategory!.label || ""),
+                    careSchedule: staticData?.careSchedule?.length ? staticData.careSchedule : [],
+                    troubleshooting: staticData?.troubleshooting?.length ? staticData.troubleshooting : [],
                 };
             }
         }
@@ -168,8 +134,8 @@ export async function getPlantById(id: string): Promise<Plant | undefined> {
         name: matchedCategory.label,
         botanicalName: staticData?.botanicalName || "",
         imageUrl: staticData?.imageUrl || "/images/placeholder.png",
-        careSchedule: staticData?.careSchedule?.length ? staticData.careSchedule : assignDefaultSchedule(matchedCategory.label || ""),
-        troubleshooting: staticData?.troubleshooting?.length ? staticData.troubleshooting : assignDefaultTroubleshooting(matchedCategory.label || ""),
+        careSchedule: staticData?.careSchedule?.length ? staticData.careSchedule : [],
+        troubleshooting: staticData?.troubleshooting?.length ? staticData.troubleshooting : [],
     };
 }
 
@@ -179,7 +145,12 @@ export async function createCareSessions(
     plantingDate: string,
     zip: string,
     deviceId: string,
-    purchaseDate?: string
+    purchaseDate?: string,
+    isPlanted: boolean = true,
+    // New Fields
+    storeName?: string,
+    purchasePrice?: number,
+    starterSize?: string
 ): Promise<boolean> {
     // Hardcoded Store ID (Store S1) for prototype, unless we have real store logic later
     const STORE_ID = "87661f59-fae5-5d6f-98fa-5880f4a14a42";
@@ -189,15 +160,18 @@ export async function createCareSessions(
         store_sku_id: plant.skuId || null,
         care_category_id: plant.uuid!, // Assert UUID exists
         receipt_id: deviceId, // Device ID as key
-        planted_at: new Date(plantingDate).toISOString(),
+        planted_at: new Date(plant.plantingDate || plantingDate).toISOString(),
         zip: zip,
+        is_planted: plant.isPlanted !== undefined ? plant.isPlanted : isPlanted, // Prefer per-plant status
         session_token: null,
         token_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
         window_days: 7,
 
         // Granular Data (New Columns)
-        purchase_price: plant.purchasePrice || null,
-        pot_size: plant.potSize || null,
+        store_name: storeName || null,
+        store_zip: zip, // Default to garden zip if not separate
+        purchase_price: purchasePrice || plant.purchasePrice || null,
+        starter_size: starterSize || plant.potSize || null,
         purchase_date: purchaseDate ? new Date(purchaseDate).toISOString() : null,
         // We could also save 'quantity' here if we expanded the table to specific item rows, 
         // but for now 1 row = 1 plant logic implies we create multiple sessions or just track the first one.
@@ -278,7 +252,8 @@ export async function getCareSessionsByDeviceId(deviceId: string): Promise<any[]
         .select(`
             *,
             care_category:care_categories(*),
-            store_sku:store_skus(*)
+            store_sku:store_skus(*),
+            outcome:care_outcomes(*)
         `)
         .eq('receipt_id', deviceId) // Query text column
         .order('planted_at', { ascending: false });
@@ -304,6 +279,24 @@ export async function deleteCareSession(id: string): Promise<boolean> {
     return true;
 }
 
+// --- Update Status ---
+
+export async function markAsPlanted(sessionId: string, date: string = new Date().toISOString()): Promise<boolean> {
+    const { error } = await (supabase
+        .from('care_sessions') as any)
+        .update({
+            is_planted: true,
+            planted_at: date
+        })
+        .eq('id', sessionId);
+
+    if (error) {
+        console.error("Error marking as planted:", error);
+        return false;
+    }
+    return true;
+}
+
 // --- Gamification Logic ---
 
 export interface UserStats {
@@ -324,7 +317,7 @@ export async function getUserStats(deviceId: string): Promise<UserStats> {
         .eq('device_id', deviceId)
         .maybeSingle();
 
-    if (error && error.code !== 'PGRST116') {
+    if (error && error.code !== 'PGRST116' && error.code !== 'PGRST205') {
         console.warn("Error fetching user stats:", error);
     }
 
@@ -344,11 +337,14 @@ export async function getUserStats(deviceId: string): Promise<UserStats> {
 }
 
 export async function awardXP(deviceId: string, amount: number, activityDate: string = new Date().toISOString().split('T')[0]): Promise<void> {
+    if (!deviceId) return;
+
     // Fetch current stats
     let stats = await getUserStats(deviceId);
+    if (!stats) return;
 
     // Update XP
-    stats.xp += amount;
+    stats.xp = (Number(stats.xp) || 0) + amount; // Safe math
     const newLevel = calculateLevel(stats.xp);
 
     // Update Streak
@@ -364,10 +360,13 @@ export async function awardXP(deviceId: string, amount: number, activityDate: st
             level: newLevel,
             streak_days: newStreak,
             last_active_date: today,
-            badges: stats.badges // TODO: Add logic to push new badges
+            badges: stats.badges || [] // Ensure array
         } as any);
 
-    if (error) console.error("Failed to update XP:", error);
+    if (error) {
+        console.error("Failed to update XP for device:", deviceId);
+        console.error("Supabase Error Details:", JSON.stringify(error, null, 2));
+    }
 }
 
 // --- Care Logs (Check-ins) ---
@@ -398,8 +397,9 @@ export async function logCareAction(
         return false;
     }
 
-    // Gamification Hook: Award XP
+    // Gamification Hook: Award XP (LEGACY - Disabled to prevent schema errors)
     // 1. Get Device ID from Session
+    /* 
     const { data: session } = await supabase
         .from('care_sessions')
         .select('receipt_id')
@@ -412,6 +412,7 @@ export async function logCareAction(
         const qualityXP = calculateWordCountXP(note);
         await awardXP((session as any).receipt_id, baseXP + qualityXP, logDate);
     }
+    */
 
     return true;
 }

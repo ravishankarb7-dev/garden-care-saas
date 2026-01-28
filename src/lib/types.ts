@@ -23,6 +23,11 @@ export type Plant = {
     purchasePrice?: number;
     potSize?: string;
     quantity?: number;
+    isPlanted?: boolean; // New: Per-plant status
+    plantingDate?: string; // New: Per-plant date
+    storeName?: string;
+    storeZip?: string;
+    frostSensitive?: boolean;
 };
 
 export type WeatherAlert = {

@@ -1,0 +1,51 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "RootCause Logo New Plant Care" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - img "RootCause Logo" [ref=e6]
+          - heading "New Plant Care" [level=1] [ref=e7]
+        - navigation [ref=e8]:
+          - button "Your Canopy" [ref=e10]:
+            - text: Your Canopy
+            - img [ref=e11]
+          - link "User Guide" [ref=e13] [cursor=pointer]:
+            - /url: /guide
+          - link "Add New Plant" [ref=e14] [cursor=pointer]:
+            - /url: /intake
+          - button "Petals & Prickles" [ref=e15]:
+            - generic [ref=e16]: Petals & Prickles
+            - img [ref=e17]
+    - main [ref=e19]:
+      - generic [ref=e21]:
+        - button "Back to Upload" [ref=e22]:
+          - img [ref=e23]
+          - text: Back to Upload
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - heading "Identify Your Greenery" [level=2] [ref=e30]
+            - paragraph [ref=e31]: Tell us who joined the family. Each plant can have its own story.
+          - generic [ref=e32]:
+            - generic [ref=e33]: Add a Plant (e.g. "Hydrangea")
+            - generic [ref=e34]:
+              - img [ref=e35]
+              - textbox "Type plant name..." [active] [ref=e38]: Tropical Fern
+          - generic [ref=e39]:
+            - generic [ref=e40]: Garden Location (Zip)
+            - generic [ref=e41]:
+              - img [ref=e42]
+              - textbox "e.g. 90210" [ref=e45]
+          - generic [ref=e46]:
+            - button "Cancel" [ref=e47]
+            - button "Establish Care Plan" [disabled]
+  - button "Ask Sage" [ref=e48]:
+    - img [ref=e49]
+    - generic [ref=e52]: Ask Sage
+  - button "Open Next.js Dev Tools" [ref=e58] [cursor=pointer]:
+    - img [ref=e59]
+  - alert [ref=e62]
+```

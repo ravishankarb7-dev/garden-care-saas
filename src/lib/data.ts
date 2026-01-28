@@ -11,7 +11,7 @@ const BASE_PLANTS: Plant[] = [
             { day: 7, action: "Mulch", description: "Apply 2-3 inches of mulch to retain moisture." },
             { day: 14, action: "Fertilize", description: "Apply a balanced rose fertilizer." },
             { day: 21, action: "Stabilization Check", description: "Water deeply if soil is stable. Inspect for early pest pressure." },
-            { day: 28, action: "Establishment Transition", description: "Shift to weather-responsive watering. Avoid overfeeding." },
+            { day: 28, action: "Planting Phase Transition", description: "Shift to weather-responsive watering. Avoid overfeeding." },
         ],
         troubleshooting: [
             { symptom: "Yellow Leaves", diagnosis: "Overwatering or Drainage Issue", action: "Check soil moisture. Ensure pot/ground drains well." },
@@ -108,7 +108,7 @@ const BASE_PLANTS: Plant[] = [
             { day: 14, action: "Fertilize", description: "Apply balanced liquid fertilizer diluted to 1/2 strength." },
             { day: 21, action: "Pest Control", description: "Inspect underside of leaves for mites." },
             { day: 24, action: "No Water", description: "Explicit dry period. Do not water." },
-            { day: 28, action: "Establishment", description: "Roots should be settling. Water only when top 2 inches dry." },
+            { day: 28, action: "Planting Phase", description: "Roots should be settling. Water only when top 2 inches dry." },
         ],
         troubleshooting: []
     },
@@ -190,7 +190,7 @@ const BASE_PLANTS: Plant[] = [
             { day: 10, action: "Water", description: "Deep watering promotes deep roots." },
             { day: 14, action: "Mulch", description: "Verify mulch layer is suppressing weeds effectively." },
             { day: 21, action: "Growth Check", description: "Look for new leaf emergence." },
-            { day: 28, action: "Establishment", description: "Reduce frequency but water deeply." }
+            { day: 28, action: "Planting Phase", description: "Reduce frequency but water deeply." }
         ],
         troubleshooting: [
             { symptom: "Holes in leaves", diagnosis: "Slugs/Snails", action: "Check in wet conditions." }
@@ -201,7 +201,7 @@ const BASE_PLANTS: Plant[] = [
         name: "Vegetable Starts",
         botanicalName: "Various",
         careSchedule: [
-            { day: 1, action: "Water", description: "Keep soil moist to help establishment." },
+            { day: 1, action: "Water", description: "Keep soil moist to help root anchoring." },
             { day: 2, action: "Check Moisture", description: "Ensure soil remains damp. Water if dry." },
             { day: 3, action: "Water", description: "Water continuously to support root growth." },
             { day: 4, action: "Moisture Check", description: "Tomatoes need consistent water. Check top inch." },
@@ -242,7 +242,8 @@ export const PLANTS: Plant[] = [
         name: "Annual Flowering Plants",
         botanicalName: "Various",
         careSchedule: BASE_PLANTS.find(p => p.id === 'annual-flowering-plants')?.careSchedule || [],
-        troubleshooting: BASE_PLANTS.find(p => p.id === 'annual-flowering-plants')?.troubleshooting || []
+        troubleshooting: BASE_PLANTS.find(p => p.id === 'annual-flowering-plants')?.troubleshooting || [],
+        frostSensitive: true
     },
     {
         id: "plant_perennial_flowering",
@@ -256,14 +257,21 @@ export const PLANTS: Plant[] = [
         name: "Vegetable Starts",
         botanicalName: "Various",
         careSchedule: BASE_PLANTS.find(p => p.id === 'vegetable-starts')?.careSchedule || [],
-        troubleshooting: BASE_PLANTS.find(p => p.id === 'vegetable-starts')?.troubleshooting || []
+        troubleshooting: BASE_PLANTS.find(p => p.id === 'vegetable-starts')?.troubleshooting || [],
+        frostSensitive: true
     },
     // USER SPECIFIC CATEGORIES WITH NO SCHEDULE (YET)
     { id: "shrub_drought_tolerant", name: "Drought Tolerant Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
     { id: "shrub_hedge_screening", name: "Hedge & Screening Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
     { id: "shrub_acid_loving", name: "Acid Loving Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
     { id: "shrub_native", name: "Native Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
-    { id: "shrub_broadleaf_evergreen", name: "Broadleaf Evergreen Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    {
+        id: "shrub_broadleaf_evergreen",
+        name: "Broadleaf Evergreen Shrubs",
+        botanicalName: "Various",
+        careSchedule: [],
+        troubleshooting: []
+    },
     { id: "shrub_shade", name: "Shade Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
     { id: "shrub_sun", name: "Sun Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
     { id: "shrub_foundation", name: "Foundation Shrubs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
@@ -276,7 +284,26 @@ export const PLANTS: Plant[] = [
     { id: "plant_ornamental_grass", name: "Ornamental Grasses", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
     { id: "plant_groundcover", name: "Groundcover Plants", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
     { id: "plant_herb_container", name: "Container Herbs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
-    { id: "plant_herb_inground", name: "Inground Herbs", botanicalName: "Various", careSchedule: [], troubleshooting: [] }
+    { id: "plant_herb_inground", name: "Inground Herbs", botanicalName: "Various", careSchedule: [], troubleshooting: [] },
+    // NEW TROPICAL CATEGORY
+    {
+        id: "tropical_evergreen",
+        name: "Tropical Evergreen Tree",
+        botanicalName: "Azadirachta indica et al.",
+        careSchedule: [
+            { day: 1, action: "Water Deeply", description: "Saturate the root ball to remove air pockets." },
+            { day: 3, action: "Check Moisture", description: "Tropicals need moisture but hate 'wet feet'. Ensure drainage." },
+            { day: 7, action: "Water", description: "Maintain consistent soil moisture. Mulch to retain heat and water." },
+            { day: 14, action: "Inspect", description: "Check for pests (mites/scale) which love tropicals in dry air." },
+            { day: 21, action: "Deep Soak", description: "Encourage taproot growth with a deep soak." },
+            { day: 28, action: "Transition", description: "Shift to monitoring based on rainfall and heat." }
+        ],
+        troubleshooting: [
+            { symptom: "Dropping leaves", diagnosis: "Cold Shock or Dryness", action: "Move to warmer spot or increase humidity." },
+            { symptom: "Yellowing leaves", diagnosis: "Overwatering", action: "Allow soil to dry slightly between waterings." }
+        ],
+        frostSensitive: true
+    }
 ];
 
 export function getPlantById(id: string): Plant | undefined {

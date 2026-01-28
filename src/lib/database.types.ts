@@ -46,6 +46,11 @@ export interface Database {
                     zip: string | null
                     in_ground: boolean | null
                     sun_exposure: 'full_sun' | 'part_sun' | 'shade' | null
+                    is_planted: boolean
+                    store_name: string | null
+                    store_zip: string | null
+                    purchase_price: number | null
+                    starter_size: string | null
                     created_at: string
                     updated_at: string
                 }
@@ -62,6 +67,11 @@ export interface Database {
                     zip?: string | null
                     in_ground?: boolean | null
                     sun_exposure?: 'full_sun' | 'part_sun' | 'shade' | null
+                    is_planted?: boolean
+                    store_name?: string | null
+                    store_zip?: string | null
+                    purchase_price?: number | null
+                    starter_size?: string | null
                     created_at?: string
                     updated_at?: string
                 }
@@ -78,6 +88,11 @@ export interface Database {
                     zip?: string | null
                     in_ground?: boolean | null
                     sun_exposure?: 'full_sun' | 'part_sun' | 'shade' | null
+                    is_planted?: boolean
+                    store_name?: string | null
+                    store_zip?: string | null
+                    purchase_price?: number | null
+                    starter_size?: string | null
                     created_at?: string
                     updated_at?: string
                 }

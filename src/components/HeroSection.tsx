@@ -24,8 +24,7 @@ export default function HeroSection() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2, duration: 0.8 }}
                 >
-                    The only system that adapts to your local weather.
-                    Zero guesswork. 100% bloom guarantee.
+                    The only system that adapts to local conditions and provides weather-aware guidance for the first 28 days.
                 </motion.p>
 
                 <motion.div

@@ -18,7 +18,7 @@ interface ReceiptAnalysisFormProps {
 export type FinalReceiptPayload = {
     receiptId: string;
     purchaseDate: string;
-    plantingDate: string;
+    plantingDate?: string; // Legacy/Global date - now used only as fallback
     storeName: string;
     storeZip: string | null;
     plantingZip: string; // New separate field
@@ -27,18 +27,52 @@ export type FinalReceiptPayload = {
 };
 
 export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }: ReceiptAnalysisFormProps) {
-    const [receiptId, setReceiptId] = useState(initialData.receiptId);
+    const [receiptId, setReceiptId] = useState(""); // User requested no default population
     const [purchaseDate, setPurchaseDate] = useState(initialData.purchaseDate);
-    const [plantingDate, setPlantingDate] = useState(initialData.purchaseDate);
+    // Planting Date: Global state removed, but we seed items below
+
     const [storeName, setStoreName] = useState(initialData.storeName);
     const [storeZip, setStoreZip] = useState(initialData.storeZip || "");
     const [plantingZip, setPlantingZip] = useState(initialData.storeZip || ""); // Default to store zip
-    const [city, setCity] = useState("");
+    const [city, setCity] = useState(""); // Kept for payload compatibility
 
     // Zip Validation State (for Planting Zip primarily)
     const [zipValid, setZipValid] = useState(!!initialData.storeZip);
     const [verifyingZip, setVerifyingZip] = useState(false);
     const [zipError, setZipError] = useState("");
+
+    // Safety Check State per item index
+    const [safetyChecks, setSafetyChecks] = useState<Record<number, { status: 'SAFE' | 'WARNING', message: string }>>({});
+    const [checkingSafety, setCheckingSafety] = useState<Record<number, boolean>>({});
+
+    const checkSafety = async (index: number, plantName: string, plantId: string, zip: string) => {
+        if (!zip || !/^\d{5}$/.test(zip)) return;
+
+        setCheckingSafety(prev => ({ ...prev, [index]: true }));
+        try {
+            // Construct minimal plant object for check
+            const plantPayload = { id: plantId, name: plantName };
+
+            const res = await fetch('/api/agent/plant-check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plants: [plantPayload], zip })
+            });
+            const data = await res.json();
+
+            setSafetyChecks(prev => ({
+                ...prev,
+                [index]: {
+                    status: data.safe ? 'SAFE' : 'WARNING',
+                    message: data.message
+                }
+            }));
+        } catch (err) {
+            console.error("Safety check failed", err);
+        } finally {
+            setCheckingSafety(prev => ({ ...prev, [index]: false }));
+        }
+    };
 
     // Verify Zip Code REAL-TIME
     useEffect(() => {
@@ -73,9 +107,16 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
         return () => clearTimeout(timer);
     }, [plantingZip]);
 
+    // ...
 
     // State for items (Identified vs Unrecognized)
-    const [items, setItems] = useState<ScannedItem[]>(initialData.items);
+    // State for items (Identified vs Unrecognized)
+    // Initialize with default planting status: PENDING (False)
+    const [items, setItems] = useState<ScannedItem[]>(initialData.items.map(i => ({
+        ...i,
+        isPlanted: false,
+        plantingDate: undefined
+    })));
 
     // Editing state for unrecognized items
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -112,6 +153,27 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
     // Computed items
     const identifiedItems = items.filter(i => i.matchedPlant);
     const unrecognizedItems = items.filter(i => !i.matchedPlant);
+
+    // Auto-run safety checks when Zip/Items match (Identified items only)
+    useEffect(() => {
+        if (!zipValid || !plantingZip || !/^\d{5}$/.test(plantingZip)) return;
+
+        identifiedItems.forEach((item) => {
+            // We need the key to track checks. Since items can be edited, we should probably track by index in the master list.
+            const realIndex = items.indexOf(item);
+            if (realIndex === -1) return;
+
+            // If not checked and not currently checking
+            if (!safetyChecks[realIndex] && !checkingSafety[realIndex]) {
+                checkSafety(
+                    realIndex,
+                    item.matchedPlant?.name || item.originalText,
+                    item.matchedPlant?.id || "unknown",
+                    plantingZip
+                );
+            }
+        });
+    }, [zipValid, plantingZip, items]); // Re-run if master items change (e.g. edit triggers re-render)
 
     // Delete an item
     const deleteItem = (index: number) => {
@@ -175,26 +237,27 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // 1. Sanity Check: Planting Date (Must be within last 28 days)
-        const plantingTime = new Date(plantingDate).getTime();
+        // 1. Sanity Check: Planting Dates (Must be within last 28 days for planted items)
         const now = new Date().getTime();
-        const diffDays = (now - plantingTime) / (1000 * 3600 * 24);
-
-        if (diffDays > 28) {
-            alert("The planting date is too old (> 4 weeks ago). We focus on tracking new care cycles for fresh starts.");
-            return;
+        for (const item of identifiedItems) {
+            if (item.isPlanted && item.plantingDate) {
+                const pDate = new Date(item.plantingDate).getTime();
+                const diffDays = (now - pDate) / (1000 * 3600 * 24);
+                if (diffDays > 28) {
+                    const plantName = item.matchedPlant?.name || item.originalText;
+                    alert(`The planting date for "${plantName}" is too old (> 4 weeks ago). We focus on tracking new care cycles for fresh starts.`);
+                    return;
+                }
+            }
         }
 
-        // 2. Change Detection & Confirmation
-        const dateChanged = plantingDate !== purchaseDate;
+        // 2. Change Detection & Confirmation (Only for Zip now)
         // Use loose equality for zips to handle nulls vs empty strings gracefully
         const zipChanged = (plantingZip || "") !== (initialData.storeZip || "");
 
-        if (dateChanged || zipChanged) {
+        if (zipChanged) {
             let msg = "Please confirm your changes:\n\n";
-            if (dateChanged) msg += `• Planting Date: ${plantingDate} (Receipt was ${purchaseDate})\n`;
-            if (zipChanged) msg += `• Planting Zip: ${plantingZip} (Receipt was ${initialData.storeZip || 'Unknown'})\n`;
-
+            msg += `• Planting Zip: ${plantingZip} (Receipt was ${initialData.storeZip || 'Unknown'})\n`;
             msg += "\nProceed with these details?";
 
             if (!window.confirm(msg)) {
@@ -219,7 +282,9 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
                 // Append instance data
                 purchasePrice: item.price !== null ? item.price : undefined,
                 potSize: item.potSize !== null ? item.potSize : undefined,
-                quantity: item.quantity || 1
+                quantity: item.quantity || 1,
+                isPlanted: item.isPlanted !== undefined ? item.isPlanted : true, // Default to TRUE if untouched
+                plantingDate: item.plantingDate // Pass the specific date
             };
 
             return enrichedPlant;
@@ -228,7 +293,7 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
         onConfirm({
             receiptId,
             purchaseDate,
-            plantingDate,
+            // plantingDate, // Global removed
             storeName,
             storeZip, // Legacy payload field, optional
             plantingZip,
@@ -236,6 +301,26 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
             selectedPlants: finalPlants
         });
     };
+
+    // Constraint Logic for Planting Date
+    const getMinPlantingDate = () => {
+        const pDate = new Date(purchaseDate);
+        const twoWeeksAgo = new Date();
+        twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+        // "later" of Purchase Date OR Two Weeks Ago
+        // If purchase was 1 year ago -> min is Two Weeks Ago (allow recent planting of old stock? No wait.)
+        // "prior to purchase date OR recent two weeks, whichever is later"
+        // Case A: Purchase today. Max(Today, 2wAgo) = Today. Min = Today.
+        // Case B: Purchase 1 month ago. Max(1moAgo, 2wAgo) = 2wAgo. Min = 2wAgo. (Can't plant 3 weeks ago?)
+        // Interpretation: We don't want backdating beyond 2 weeks, AND we can't date before purchase.
+
+        return pDate > twoWeeksAgo ? pDate.toISOString().split('T')[0] : twoWeeksAgo.toISOString().split('T')[0];
+    };
+
+    const minDate = getMinPlantingDate();
+
+    // ... (rest of component render)
 
     return (
         <form onSubmit={handleSubmit} style={{ maxWidth: "700px", margin: "0 auto" }}>
@@ -248,7 +333,7 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
             <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 mb-8 grid grid-cols-2 gap-4">
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Receipt ID</label>
-                    <input type="text" value={receiptId} onChange={e => setReceiptId(e.target.value)} className="w-full p-2 border rounded-md" />
+                    <input type="text" value={receiptId} onChange={e => setReceiptId(e.target.value)} className="w-full p-2 border rounded-md" placeholder="Optional" />
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Store Name</label>
@@ -260,17 +345,9 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
                     <label className="block text-sm font-medium text-gray-700 mb-1">Purchase Date</label>
                     <input type="date" value={purchaseDate} onChange={e => setPurchaseDate(e.target.value)} max={new Date().toISOString().split('T')[0]} className="w-full p-2 border rounded-md" />
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Planting Date</label>
-                    <input
-                        type="date"
-                        value={plantingDate}
-                        onChange={e => setPlantingDate(e.target.value)}
-                        max={new Date().toISOString().split('T')[0]} // Block future dates
-                        className="w-full p-2 border rounded-md bg-green-50 border-green-200"
-                        title="When did you put them in soil?"
-                    />
-                </div>
+
+                {/* Empty spacer for grid alignment where Global Planting Date used to be */}
+                <div className="hidden md:block"></div>
 
                 <div>
                     <label className="block text-sm font-medium text-gray-500 mb-1">Store Zip Code</label>
@@ -303,10 +380,7 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
                     </div>
                     {zipError && <p className="text-xs text-red-500 mt-1">{zipError}</p>}
                 </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                    <input type="text" value={city} onChange={e => setCity(e.target.value)} className="w-full p-2 border rounded-md" />
-                </div>
+                {/* City removed per request */}
             </div>
 
             {/* IDENTIFIED PLANTS */}
@@ -338,8 +412,75 @@ export default function ReceiptAnalysisForm({ initialData, onConfirm, onCancel }
                                         </div>
                                     </div>
                                 </div>
-                                <div className="text-green-600">
-                                    <Check size={20} />
+                                <div className="flex items-center gap-4">
+                                    {/* Planting Date (Visible if Planted) */}
+                                    {item.isPlanted && (
+                                        <input
+                                            type="date"
+                                            value={item.plantingDate || ""}
+                                            onChange={(e) => {
+                                                const newItems = [...items];
+                                                newItems[idx].plantingDate = e.target.value;
+                                                setItems(newItems);
+                                            }}
+                                            min={minDate}
+                                            max={new Date().toISOString().split('T')[0]}
+                                            className="p-1.5 border border-green-200 rounded-md text-xs bg-green-50 text-green-800 focus:outline-none focus:ring-1 focus:ring-green-300"
+                                            title="Date Planted"
+                                        />
+                                    )}
+
+                                    {/* Planting Status Toggle */}
+                                    <div className="flex flex-col items-end gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const newItems = [...items];
+                                                const currentStatus = newItems[idx].isPlanted !== undefined ? newItems[idx].isPlanted : false;
+                                                const newStatus = !currentStatus;
+
+                                                newItems[idx].isPlanted = newStatus;
+
+                                                if (newStatus) {
+                                                    // Default to Today when toggled ON
+                                                    newItems[idx].plantingDate = new Date().toISOString().split('T')[0];
+                                                } else {
+                                                    // Reset when toggled OFF
+                                                    newItems[idx].plantingDate = undefined;
+                                                }
+
+                                                setItems(newItems);
+                                            }}
+                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${(item.isPlanted) // Check explicitly for true
+                                                ? "bg-green-100 text-green-700 border-green-200"
+                                                : "bg-gray-100 text-gray-400 border-gray-200"
+                                                }`}
+                                            title={(item.isPlanted) ? "Status: Planted in Ground" : "Status: Purchased but not planted yet"}
+                                        >
+                                            <span className="text-lg">{(item.isPlanted) ? "🌱" : "🛍️"}</span>
+                                            {(item.isPlanted) ? "Planted" : "Pending"}
+                                        </button>
+
+                                        {/* Advisory Message - Only show if NOT planted (Guidance) */}
+                                        {!item.isPlanted && (
+                                            <>
+                                                {checkingSafety[idx] && <span className="text-[10px] text-gray-400 animate-pulse">Checking weather...</span>}
+                                                {safetyChecks[idx] && (
+                                                    <div className={`text-[10px] px-2 py-1 rounded border max-w-[200px] text-right ${safetyChecks[idx].status === 'SAFE'
+                                                        ? 'bg-green-50 text-green-700 border-green-100'
+                                                        : 'bg-amber-50 text-amber-700 border-amber-100'
+                                                        }`}>
+                                                        {safetyChecks[idx].status === 'SAFE' ? '✅ ' : '⚠️ '}
+                                                        {safetyChecks[idx].message}
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+
+                                    <div className="text-green-600">
+                                        <Check size={20} />
+                                    </div>
                                 </div>
                             </div>
                         ))}

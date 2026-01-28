@@ -31,16 +31,17 @@ export async function POST(req: NextRequest) {
                     role: "system",
                     content: `You are a receipt scanner for a gardening app. 
                     Analyze the receipt image and extract:
-                    1. Store Name & Zip/Postal Code (e.g. 5 digits US, alphanum UK/Canada).
-                    2. Receipt Number / Transaction ID (if visible).
-                    3. Purchase Date (YYYY-MM-DD) - Default to today if not found.
-                    4. Transaction Total Amount
-                    5. List of line items, extracting:
-                       - Description
-                       - Price (per item)
-                       - Pot Size (e.g. "1 GAL", "4 IN", "2.5 QT") if visible in description or sku.
-                       - Quantity
-                    
+                    1. Store Name & Zip/Postal Code.
+                    2. Receipt Number / Transaction ID.
+                    3. Purchase Date (YYYY-MM-DD).
+                    4. Transaction Total Amount.
+                    5. List of line items.
+
+                    CRITICAL: Look for "POT SIZE" or Container Size in the Description or SKU.
+                    Common formats: "1G", "3G", "#1", "#3", "1 GAL", "3 GALLON", "1 QT", "4 IN", "2.5 QT", "PW", "PROVEN WINNERS".
+                    Example: "HYDRANGEA PANICLE 3G" -> pot_size: "3G"
+                    Example: "#3 ILEX GLABRA" -> pot_size: "3G" (! Normalize #3 to 3G, #1 to 1G)
+
                     Return ONLY raw JSON with this structure:
                     {
                         "storeName": "string",

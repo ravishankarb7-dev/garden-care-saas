@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Header from "@/components/Header";
-import { Sprout, Calendar, Trophy } from "lucide-react";
+import { Sprout, Calendar, Shield } from "lucide-react";
 
 export default function Home() {
   return (
@@ -15,7 +15,7 @@ export default function Home() {
             The care manual nature forgot to pack. <br />
           </h1>
           <p className="text-xl text-gray-600">
-            The only system that adapts to your local weather. Zero guesswork. 100% bloom guarantee.
+            The only system that adapts to local conditions and provides weather-aware guidance for the first 28 days.
           </p>
         </div>
 
@@ -28,7 +28,7 @@ export default function Home() {
                 <Sprout size={48} className="text-green-700" strokeWidth={1.5} />
               </div>
               <h2 className="text-2xl font-bold font-serif text-green-900 mb-4 group-hover:text-green-700 transition-colors">
-                Welcome a Newcomer
+                Add New Plant
               </h2>
               <p className="text-gray-500 leading-relaxed mb-6">
                 Scan your receipt or manually add plants to get started.
@@ -46,10 +46,10 @@ export default function Home() {
                 <Calendar size={48} className="text-blue-700" strokeWidth={1.5} />
               </div>
               <h2 className="text-2xl font-bold font-serif text-green-900 mb-4 group-hover:text-green-700 transition-colors">
-                Tend Your Terrain
+                Current Care Status
               </h2>
               <p className="text-gray-500 leading-relaxed mb-6">
-                View your personalized schedule for watering & care.
+                Often, the right action is to let the plant rest.
               </p>
               <span className="mt-auto text-sm font-bold tracking-widest uppercase text-green-800 border-b border-green-200 pb-1 group-hover:border-green-600 transition-colors">
                 View Dashboard
@@ -57,20 +57,20 @@ export default function Home() {
             </div>
           </Link>
 
-          {/* Card 3: Trophy Shed */}
+          {/* Card 3: Planting Phase Dashboard */}
           <Link href="/profile" className="group no-underline w-full">
             <div className="h-full bg-white p-10 rounded-3xl shadow-lg border border-sage-100 hover:shadow-2xl hover:border-green-300 transition-all duration-300 transform hover:-translate-y-2 flex flex-col items-center text-center">
-              <div className="w-24 h-24 bg-amber-50 rounded-full flex items-center justify-center mb-8 group-hover:bg-amber-100 transition-colors">
-                <Trophy size={48} className="text-amber-600" strokeWidth={1.5} />
+              <div className="w-24 h-24 bg-orange-50 rounded-full flex items-center justify-center mb-8 group-hover:bg-orange-100 transition-colors">
+                <Shield size={48} className="text-orange-600" strokeWidth={1.5} />
               </div>
               <h2 className="text-2xl font-bold font-serif text-green-900 mb-4 group-hover:text-amber-600 transition-colors">
-                Trophy Shed
+                Planting Phase Dashboard
               </h2>
               <p className="text-gray-500 leading-relaxed mb-6">
-                View your achievements, badges, and gardening stats.
+                Guiding safe care during the first 28 days after planting.
               </p>
               <span className="mt-auto text-sm font-bold tracking-widest uppercase text-green-800 border-b border-green-200 pb-1 group-hover:border-green-600 transition-colors">
-                View Profile
+                View Planting Phase
               </span>
             </div>
           </Link>

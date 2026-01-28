@@ -4,26 +4,17 @@ import { useEffect, useState, Suspense } from "react";
 import Header from "@/components/Header";
 import { useSearchParams } from "next/navigation";
 import { getOrCreateDeviceId, saveDeviceId, isValidGardenCode } from "@/lib/device";
-import { getUserStats, UserStats } from "@/lib/queries";
-import { Trophy, Flame, Sprout, Medal, Lock, Star } from "lucide-react";
+import { getUserStats } from "@/lib/queries"; // Keeping for device ID check, though stats unused
+import { ShieldCheck, Calendar, AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils";
 
-function ProfileContent() {
-    const [stats, setStats] = useState<UserStats | null>(null);
+function EstablishmentOverview() {
+    const [sessions, setSessions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const searchParams = useSearchParams();
-
-    // Badges Definition (Static for now, unlocks dynamic)
-    const ALL_BADGES = [
-        { id: 'first_bloom', name: 'First Bloomer', desc: 'Added your first plant.', icon: Sprout, xp: 50 },
-        { id: 'journalist', name: 'The Journalist', desc: 'Wrote a detailed care note.', icon: Star, xp: 20 },
-        { id: 'streak_7', name: 'Week Warrior', desc: '7-Day Care Streak.', icon: Flame, xp: 100 },
-        { id: 'survivor_28', name: 'Survivor', desc: 'Kept a plant alive for 28 days.', icon: Medal, xp: 200 },
-        { id: 'master', name: 'Groundskeeper', desc: 'Reached Level 5.', icon: Trophy, xp: 500 },
-    ];
 
     useEffect(() => {
         async function load() {
@@ -34,8 +25,12 @@ function ProfileContent() {
                 id = getOrCreateDeviceId();
             }
 
-            const data = await getUserStats(id || "guest");
-            setStats(data);
+            // Fetch Sessions directly
+            const sessionsData = await import("@/lib/queries").then(m => m.getCareSessionsByDeviceId(id || "guest"));
+
+            if (sessionsData) {
+                setSessions(sessionsData);
+            }
             setLoading(false);
         }
         load();
@@ -49,102 +44,137 @@ function ProfileContent() {
         );
     }
 
-    if (!stats) return null;
-
-    // Level Calc (Duplicate logic for visualization)
-    const levels = [
-        { lvl: 1, min: 0, max: 200, name: "Seedling" },
-        { lvl: 2, min: 200, max: 600, name: "Sprout" },
-        { lvl: 3, min: 600, max: 1500, name: "Budding Gardener" },
-        { lvl: 4, min: 1500, max: 2500, name: "Bloomer" },
-        { lvl: 5, min: 2500, max: 10000, name: "Master Groundskeeper" },
-    ];
-    const currentLevel = levels.find(l => l.lvl === stats.level) || levels[0];
-    const nextLevel = levels.find(l => l.lvl === stats.level + 1);
-
-    const levelStart = currentLevel.min;
-    const levelEnd = nextLevel ? nextLevel.min : currentLevel.max;
-    const progress = Math.min(100, Math.max(0, ((stats.xp - levelStart) / (levelEnd - levelStart)) * 100));
-
     return (
         <div className="min-h-screen bg-zinc-50 font-sans">
             <Header />
 
             <main className="max-w-4xl mx-auto px-6 py-12">
-                <h1 className="text-3xl font-bold font-serif text-zinc-900 mb-2 flex items-center gap-3">
-                    <Trophy className="text-amber-500" />
-                    Trophy Shed
-                </h1>
-                <p className="text-zinc-500 mb-8">Your gardening achievements and progress.</p>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    {/* Left Column: Identity Card */}
-                    <div className="md:col-span-1 space-y-6">
-                        <Card className="p-6 border-zinc-200 bg-white shadow-sm text-center">
-                            <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-700 font-bold text-3xl border-4 border-white shadow-md">
-                                {stats.level}
-                            </div>
-                            <h2 className="text-xl font-bold text-zinc-900 mb-1">{currentLevel.name}</h2>
-                            <p className="text-emerald-600 font-bold mb-6">{stats.xp} XP</p>
-
-                            <div className="text-left mb-1 flex justify-between text-xs font-bold text-zinc-400 uppercase tracking-wider">
-                                <span>Progress</span>
-                                <span>{nextLevel ? `${nextLevel.min - stats.xp} to Lvl ${nextLevel.lvl}` : 'Max Level'}</span>
-                            </div>
-                            <Progress value={progress} className="h-3 mb-6" />
-
-                            <div className="bg-zinc-50 rounded-lg p-4 flex items-center justify-center gap-3 border border-zinc-100">
-                                <Flame className={stats.streak_days > 0 ? "text-orange-500 fill-orange-500" : "text-zinc-300"} />
-                                <div className="text-left">
-                                    <div className="text-xs text-zinc-400 font-bold uppercase">Current Streak</div>
-                                    <div className="text-zinc-900 font-bold">{stats.streak_days} Days</div>
-                                </div>
-                            </div>
-                        </Card>
-
-                        <Link href="/dashboard">
-                            <Button variant="outline" fullWidth className="border-zinc-200 text-zinc-600">
-                                Return to Garden
-                            </Button>
-                        </Link>
-                    </div>
-
-                    {/* Right Column: Badges */}
-                    <div className="md:col-span-2">
-                        <h3 className="text-lg font-bold text-zinc-900 mb-4 border-b border-zinc-200 pb-2">Badges</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {ALL_BADGES.map((badge) => {
-                                const isUnlocked = stats.badges?.includes(badge.id) ||
-                                    (badge.id === 'first_bloom' && stats.xp >= 50) || // Fallback logic if badges array empty
-                                    (badge.id === 'master' && stats.level >= 5);
-
-                                return (
-                                    <div
-                                        key={badge.id}
-                                        className={`p-4 rounded-xl border flex items-start gap-4 transition-all ${isUnlocked
-                                                ? 'bg-white border-emerald-100 shadow-sm'
-                                                : 'bg-zinc-50 border-zinc-100 opacity-60'
-                                            }`}
-                                    >
-                                        <div className={`p-3 rounded-full ${isUnlocked ? 'bg-emerald-50 text-emerald-600' : 'bg-zinc-200 text-zinc-400'
-                                            }`}>
-                                            {isUnlocked ? <badge.icon size={24} /> : <Lock size={24} />}
-                                        </div>
-                                        <div>
-                                            <h4 className={`font-bold ${isUnlocked ? 'text-zinc-900' : 'text-zinc-500'}`}>
-                                                {badge.name}
-                                            </h4>
-                                            <p className="text-sm text-zinc-500 leading-snug mb-1">{badge.desc}</p>
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600/60">
-                                                +{badge.xp} XP
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold font-serif text-zinc-900 mb-2 flex items-center gap-3">
+                        <ShieldCheck className="text-zinc-700" size={32} />
+                        Planting Phase Overview
+                    </h1>
+                    <p className="text-zinc-500">Guiding safe care during the first 28 days.</p>
                 </div>
+
+                {sessions.length === 0 ? (
+                    <Card className="p-8 text-center border-zinc-200 bg-white">
+                        <h2 className="text-lg font-bold text-zinc-900 mb-2">No Active Plants</h2>
+                        <Link href="/intake" className="text-sm text-emerald-600 font-bold underline hover:text-emerald-800">
+                            Add a plant to start tracking
+                        </Link>
+                    </Card>
+                ) : (
+                    <div className="space-y-6">
+                        {sessions.map((session) => {
+                            // Data Parsing: Prioritize SKU Name over Category
+                            const plantName = session.store_sku?.display_name || session.care_category?.label || "Unknown Plant";
+                            const potSize = session.pot_size || session.store_sku?.size || ""; // e.g. "3G"
+                            const plantedAt = session.planted_at;
+
+                            // Day Calculation (Robust Logic)
+                            let dayCount = 0;
+                            let timelineUnavailable = !plantedAt;
+
+                            if (plantedAt) {
+                                // planted_at from DB is typically ISO.
+                                const pStr = new Date(plantedAt).toISOString().split('T')[0];
+                                const [py, pm, pd] = pStr.split('-').map(Number);
+                                const startDate = new Date(py, pm - 1, pd);
+                                startDate.setHours(0, 0, 0, 0);
+
+                                const now = new Date();
+                                now.setHours(0, 0, 0, 0);
+
+                                const diffTime = now.getTime() - startDate.getTime();
+                                const rawDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                                // Clamp future dates (negative) and 0 to 1 (Just planted)
+                                dayCount = Math.max(1, rawDays + 1);
+                            }
+
+                            // Establishment Complete?
+                            const isComplete = dayCount > 28;
+
+                            // Status Overlay Logic (Simulation)
+                            // In real app, we'd check care logs. 
+                            const showIntervention = false; // Placeholder
+                            const showWeatherHold = false; // Placeholder
+
+                            return (
+                                <Card key={session.id} className="p-6 border-zinc-200 bg-white shadow-sm overflow-hidden">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div>
+                                            <h3 className="font-bold text-zinc-900 text-lg flex items-center gap-2">
+                                                {plantName}
+                                                {potSize && <span className="text-xs font-normal text-zinc-400 border border-zinc-200 px-1.5 py-0.5 rounded">{potSize}</span>}
+                                            </h3>
+                                            <div className="flex gap-2 text-xs mt-1">
+                                                {timelineUnavailable ? (
+                                                    <span className="text-zinc-400 italic">Planting time unavailable.</span>
+                                                ) : isComplete ? (
+                                                    <span className="text-emerald-600 font-bold flex items-center gap-1">
+                                                        <ShieldCheck size={12} /> Planting Phase Complete
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-zinc-500">
+                                                        Day <span className="font-bold text-zinc-900">{dayCount}</span> of 28
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <Link href={`/my-plants/${session.id}`}>
+                                            <Button variant="outline" size="sm" className="text-xs h-8">View Care</Button>
+                                        </Link>
+                                    </div>
+
+                                    {/* Timeline Track */}
+                                    {!timelineUnavailable && !isComplete && (
+                                        <div className="relative mt-2">
+                                            {/* Bar Container */}
+                                            <div className="h-4 w-full bg-zinc-100 rounded-full flex overflow-hidden relative">
+                                                {/* Band 1: High Risk (Days 1-7) - 25% of 28 */}
+                                                <div className="h-full bg-red-100 w-[25%] border-r border-white/50 relative group">
+                                                    <span className="absolute bottom-full mb-1 left-2 text-[10px] text-red-400 font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">High Risk (Wk 1)</span>
+                                                </div>
+                                                {/* Band 2: Moderate Risk (Days 8-14) - 25% */}
+                                                <div className="h-full bg-amber-100 w-[25%] border-r border-white/50 relative group">
+                                                    <span className="absolute bottom-full mb-1 left-2 text-[10px] text-amber-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Moderate Risk (Wk 2)</span>
+                                                </div>
+                                                {/* Band 3: Stabilizing (Days 15-28) - 50% */}
+                                                <div className="h-full bg-emerald-50 w-[50%] relative group">
+                                                    <span className="absolute bottom-full mb-1 left-2 text-[10px] text-emerald-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Stabilizing</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Position Marker */}
+                                            <div
+                                                className="absolute top-1/2 -translate-y-1/2 w-4 h-4 bg-white border-4 border-zinc-900 rounded-full shadow-sm transition-all duration-1000"
+                                                style={{
+                                                    left: `${Math.min(100, Math.max(0, ((dayCount - 1) / 28) * 100))}%`,
+                                                    marginLeft: '-8px' // Center the dot
+                                                }}
+                                            />
+
+                                            {/* Status Labels Overlay */}
+                                            <div className="absolute top-6 left-0 flex gap-2">
+                                                {showIntervention && (
+                                                    <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold uppercase tracking-wide flex items-center gap-1">
+                                                        <AlertTriangle size={10} /> Intervention Required
+                                                    </span>
+                                                )}
+                                                {showWeatherHold && (
+                                                    <span className="text-[10px] bg-sky-100 text-sky-700 px-2 py-0.5 rounded font-bold uppercase tracking-wide">
+                                                        Weather Hold
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </Card>
+                            );
+                        })}
+                    </div>
+                )}
             </main>
         </div>
     );
@@ -152,8 +182,8 @@ function ProfileContent() {
 
 export default function ProfilePage() {
     return (
-        <Suspense fallback={<div>Loading Trophy Shed...</div>}>
-            <ProfileContent />
+        <Suspense fallback={<div>Loading Overview...</div>}>
+            <EstablishmentOverview />
         </Suspense>
     );
 }

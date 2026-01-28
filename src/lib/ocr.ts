@@ -8,6 +8,8 @@ export type ScannedItem = {
     price: number | null;
     potSize: string | null;
     quantity: number;
+    isPlanted?: boolean;
+    plantingDate?: string; // New: Per-plant date
 };
 
 export type ScannedReceiptData = {

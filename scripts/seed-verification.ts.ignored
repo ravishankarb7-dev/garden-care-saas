@@ -1,0 +1,50 @@
+
+import { createCareSessions } from '@/lib/queries';
+import { supabase } from '@/lib/supabase';
+
+async function seed() {
+    // 1. Create Session
+    const receiptId = `TEST-${Date.now()}`;
+    const plants = [{
+        id: 'tomato-better-boy', // Ensure this ID exists in your data.ts or just use a known one
+        name: 'Test Tomato',
+        botanicalName: 'Solanum lycopersicum',
+        careSchedule: [],
+        troubleshooting: [],
+        uuid: 'plant_vegetable_start' // Needs to match a category key if possible, or just raw
+    }];
+
+    // We need a valid UUID for category. Let's fetch one.
+    const { data: cat } = await supabase.from('care_categories').select('id').eq('key', 'plant_vegetable_start').single();
+    if (!cat) throw new Error("Category not found");
+
+    // @ts-ignore
+    const { data: session, error } = await supabase.from('care_sessions').insert({
+        store_id: 'store_123',
+        care_category_id: cat.id,
+        receipt_id: receiptId,
+        zip: '90210',
+        planted_at: new Date().toISOString(),
+        window_days: 14
+    }).select().single();
+
+    if (error) throw new Error(error.message);
+
+    console.log(`Created Session: ${session.id}`);
+
+    // 2. Add Care Log (Pest)
+    const { error: logError } = await supabase.from('care_logs').insert({
+        care_session_id: session.id,
+        status: 'Needs Attention',
+        action_type: 'Check',
+        note: 'Found some whiteflies on the leaves.',
+        log_date: new Date().toISOString()
+    });
+
+    if (logError) throw new Error(logError.message);
+    console.log("Added Pest Log");
+
+    console.log(`URL: http://localhost:3000/my-plants/${session.id}`);
+}
+
+seed().catch(console.error);

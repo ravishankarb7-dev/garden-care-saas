@@ -38,25 +38,25 @@ export function getGardeningContext(weather: WeatherData): GardeningContext {
         // Rewrite specific known alert types
         if (priorityAlert.event.includes("Freeze") || priorityAlert.event.includes("Frost")) {
             return {
-                headline: "Freeze Risk Detected",
-                subtext: "Temperatures are dropping dangerously low. Most plants will need protection tonight.",
-                action: "Cover sensitive plants or bring pots indoors.",
+                headline: "Freeze Risk (Care Paused)",
+                subtext: "Temperatures are unsafe. Switch to Monitoring Mode.",
+                action: "Protect plant. Do not water or prune.",
                 type: 'error'
             };
         }
         if (priorityAlert.event.includes("Heat")) {
             return {
-                headline: "Extreme Heat Caution",
-                subtext: "High temperatures can distress plants quickly.",
-                action: "Water deeply in the morning. Provide shade if possible.",
+                headline: "Extreme Heat (Care Paused)",
+                subtext: "Heat stress risk. Avoid fertilizer and pruning.",
+                action: "Monitor soil moisture. Water ONLY if dry.",
                 type: 'warning'
             };
         }
         if (priorityAlert.event.includes("Wind") || priorityAlert.event.includes("Tornado") || priorityAlert.event.includes("Hurricane")) {
             return {
                 headline: "High Wind Alert",
-                subtext: "Strong winds may damage tall plants or dry out soil.",
-                action: "Secure tall plants. Check soil moisture.",
+                subtext: "Physical damage risk.",
+                action: "Secure tall plants. monitor soil.",
                 type: 'warning'
             };
         }
@@ -93,8 +93,8 @@ export function getGardeningContext(weather: WeatherData): GardeningContext {
     if (temp > 90) {
         return {
             headline: "High Heat Stress",
-            subtext: "Plants lose water rapidly at these temperatures.",
-            action: "Check moisture daily. Water deeply.",
+            subtext: "Plants are in survival mode.",
+            action: "Monitor soil moisture. Do not fertilize.",
             type: 'warning'
         };
     }

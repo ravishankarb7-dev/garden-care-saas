@@ -83,8 +83,12 @@ export default function Header({ title = "RootCause" }: HeaderProps) {
                         )}
                     </div>
 
+                    <Link href="/guide" className="hover:text-green-200 transition-colors">
+                        User Guide
+                    </Link>
+
                     <Link href="/intake" className="hover:text-green-200 transition-colors">
-                        Welcome a Newcomer
+                        Add New Plant
                     </Link>
                     <button
                         onClick={() => window.dispatchEvent(new Event('open-sage-feedback'))}
@@ -128,11 +132,19 @@ export default function Header({ title = "RootCause" }: HeaderProps) {
                     </div>
 
                     <Link
+                        href="/guide"
+                        className="py-3 text-lg font-bold border-b border-green-800 hover:text-green-200"
+                        onClick={() => setIsMenuOpen(false)}
+                    >
+                        User Guide
+                    </Link>
+
+                    <Link
                         href="/intake"
                         className="py-3 text-lg font-bold border-b border-green-800 hover:text-green-200"
                         onClick={() => setIsMenuOpen(false)}
                     >
-                        Welcome a Newcomer
+                        Add New Plant
                     </Link>
                     <button
                         onClick={() => {

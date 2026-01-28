@@ -272,7 +272,7 @@ export default function ChatAssistant({ zip, plants }: ChatAssistantProps) {
                                     value={inputValue}
                                     onChange={(e) => setInputValue(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                                    placeholder="Ask about watering, feeding..."
+                                    placeholder="Ask before acting. When in doubt, wait."
                                     className="bg-white border-zinc-200 focus-visible:ring-primary"
                                 />
 

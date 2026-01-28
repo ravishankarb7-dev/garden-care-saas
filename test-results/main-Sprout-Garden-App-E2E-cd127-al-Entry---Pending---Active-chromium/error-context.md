@@ -1,0 +1,79 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "RootCause Logo RootCause" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - img "RootCause Logo" [ref=e6]
+          - heading "RootCause" [level=1] [ref=e7]
+        - navigation [ref=e8]:
+          - button "Your Canopy" [ref=e10]:
+            - text: Your Canopy
+            - img [ref=e11]
+          - link "User Guide" [ref=e13] [cursor=pointer]:
+            - /url: /guide
+          - link "Add New Plant" [ref=e14] [cursor=pointer]:
+            - /url: /intake
+          - button "Petals & Prickles" [ref=e15]:
+            - generic [ref=e16]: Petals & Prickles
+            - img [ref=e17]
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - img [ref=e24]
+        - generic [ref=e32]:
+          - generic [ref=e33]: "WEATHER ALERT:"
+          - generic [ref=e34]: "Frost Advisory (15°F): Hard freeze expected. Postpone new plantings."
+      - button [ref=e36]:
+        - img [ref=e37]
+    - main [ref=e40]:
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - heading "Your Canopy" [level=1] [ref=e44]
+          - paragraph [ref=e45]: Manage your care schedules and plant health.
+        - generic [ref=e46]:
+          - generic [ref=e47]: My Garden Code
+          - button "PNGQ Click to copy" [ref=e48]:
+            - text: PNGQ
+            - generic [ref=e49]: Click to copy
+          - paragraph [ref=e50]: Sync this garden to other devices using this code.
+      - generic [ref=e52]:
+        - generic [ref=e53]:
+          - img [ref=e56]
+          - generic [ref=e59]:
+            - heading "Nursery Bench" [level=2] [ref=e60]
+            - paragraph [ref=e61]: Staging area for new arrivals.
+          - generic [ref=e62]: 1 Pending
+        - generic [ref=e63]:
+          - generic [ref=e65]: "Location: 30303"
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - heading "Holding Pattern" [level=4] [ref=e69]
+              - paragraph [ref=e70]: "While these plants wait for their permanent home:"
+              - list [ref=e71]:
+                - listitem [ref=e72]: Keep in a sheltered, shady spot away from direct wind.
+                - listitem [ref=e73]: Keep soil moist — nursery pots dry out quickly!
+                - listitem [ref=e74]: Do not disturb roots until planting day.
+            - generic [ref=e76]:
+              - generic [ref=e79]:
+                - img [ref=e81]
+                - generic [ref=e84]:
+                  - heading "Hydrangea (Panicle) 3G" [level=3] [ref=e85]
+                  - paragraph [ref=e86]: Awaiting Planting
+                  - generic [ref=e88]:
+                    - img [ref=e89]
+                    - text: Wait
+                  - paragraph [ref=e91]: ⚠️ Hold off! It is too cold (15°F) for new roots.
+                  - button "Override & Plant" [ref=e93]
+              - button "Remove Plant" [ref=e94]:
+                - img [ref=e95]
+            - generic [ref=e98]: Potting Bench
+  - button "Ask Sage" [ref=e99]:
+    - img [ref=e100]
+    - generic [ref=e103]: Ask Sage
+  - button "Open Next.js Dev Tools" [ref=e109] [cursor=pointer]:
+    - img [ref=e110]
+  - alert [ref=e113]
+```

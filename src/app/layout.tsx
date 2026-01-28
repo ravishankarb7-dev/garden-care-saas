@@ -1,15 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google"; // Use Geist
+// import { Geist } from "next/font/google"; // Online font removed for build stability
 import "./globals.css";
 import ChatAssistant from "@/components/ChatAssistant";
 
+/*
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
+*/
 
 export const metadata: Metadata = {
-  title: "RootCause | A cause worth fighting for",
+  title: "RootCause | Right care. Right time.",
   description: "Stop plants from dying in the first 28 days.",
   applicationName: "RootCause",
   manifest: "/manifest.json",
@@ -38,7 +40,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} font-sans antialiased`} suppressHydrationWarning>
+      <body className={`font-sans antialiased`} suppressHydrationWarning>
         {children}
         <ChatAssistant />
       </body>

@@ -5,7 +5,12 @@ import Header from "@/components/Header";
 import ReceiptUploader from "@/components/ReceiptUploader";
 import ReceiptAnalysisForm, { FinalReceiptPayload } from "@/components/ReceiptAnalysisForm";
 import ReceiptLookup from "@/components/ReceiptLookup";
-import ManualEntryForm from "@/components/ManualEntryForm";
+import ManualEntryForm, { ManualEntryPayload } from "@/components/ManualEntryForm";
+
+// ... (other imports)
+
+// ...
+
 import { ScannedReceiptData } from "@/lib/ocr";
 import { ArrowLeft, Keyboard } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -110,7 +115,7 @@ export default function IntakePage() {
 
     const [status, setStatus] = useState("");
 
-    const handleManualConfirm = async (payload: { plants: Plant[], date: string, zip: string, purchaseDate?: string, starterSize?: string }) => {
+    const handleManualConfirm = async (payload: ManualEntryPayload) => {
         setStatus("Saving...");
         console.log("Starting Manual Confirm with payload:", payload);
         try {
@@ -125,7 +130,7 @@ export default function IntakePage() {
                 return existingSessions.some(existing => {
                     const samePlant = existing.care_category_id === newPlant.uuid;
                     // Compare simply by YYYY-MM-DD
-                    const sameDate = new Date(existing.planted_at).toISOString().split('T')[0] === new Date(payload.date).toISOString().split('T')[0];
+                    const sameDate = new Date(existing.planted_at).toISOString().split('T')[0] === new Date(payload.date || new Date()).toISOString().split('T')[0];
                     const sameZip = existing.zip === payload.zip;
                     return samePlant && sameDate && sameZip;
                 });
@@ -177,16 +182,20 @@ export default function IntakePage() {
             // Enrich plants with manual data (starter size)
             const enrichedPlants = payload.plants.map(p => ({
                 ...p,
-                potSize: payload.starterSize || undefined
+                potSize: p.potSize || (payload as any).starterSize || undefined
             }));
 
             const success = await createCareSessions(
                 transactionId,
                 enrichedPlants,
-                payload.date,
+                payload.date || new Date().toISOString(),
                 payload.zip,
                 targetDeviceId,
-                payload.purchaseDate // Pass explicit purchase date if provided
+                (payload as any).purchaseDate, // Pass explicit purchase date if provided
+                (payload as any).isPlanted, // Pass planted status
+                (payload as any).storeName,
+                (payload as any).purchasePrice,
+                (payload as any).starterSize
             );
 
             if (!success) {

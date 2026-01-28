@@ -1,7 +1,7 @@
 export const PDF_STATIC_DATA: Record<string, string> = {
     "28_Day_Stabilization_Primary_Advisory_v2.pdf": `
 28-Day Plant Stabilization Schedule
-Purpose: Canonical survival and establishment guidance for the first 28 days after planting. This document is agent-readable and conservative by design.
+Purpose: Canonical survival and planting phase guidance for the first 28 days after planting. This document is agent-readable and conservative by design.
 
 I. Global Guardrails (Always Enforced - P1)
 • Workability: Plant only when soil is workable; do not plant in frozen or waterlogged soil.
@@ -13,7 +13,7 @@ I. Global Guardrails (Always Enforced - P1)
 • Conflict Resolution: If advice conflicts, survival rules (P1) always override optimization guidance.
 
 II. Language & Season Sensitivity (Global - P1)
-• Winter Dormancy: For deciduous plants in winter, use "dormant establishment" rather than "active growth".
+• Winter Dormancy: For deciduous plants in winter, use "dormant phase" rather than "active growth".
 • Evergreen Monitoring: Evergreens in winter require moisture monitoring during dry spells even if they appear static.
 • Warm-Season Thresholds: Warm-season crops (tomatoes, peppers, basil) must not be planted or described as "ready to grow" until soil temperatures reach >=60°F (16°C).
 
@@ -24,7 +24,7 @@ III. Day 0: Planting Day (P1)
 • Initial Saturation: Water in thoroughly until the root ball and surrounding soil are fully saturated.
 • Mulching Technique: Apply mulch 2-3 inches deep, but keep it 2-3 inches away from stems and crowns to prevent rot.
 
-IV. Days 1-7: Acute Establishment (P1)
+IV. Days 1-7: Acute Planting Phase (P1)
 • Daily Checks: Inspect soil moisture daily; water deeply whenever the root zone begins to dry.
 • Watering Technique: Water at the base only; avoid routine overhead watering or wetting foliage late in the day to reduce disease.
 • Stress Protection: Provide temporary shade or wind protection if plants wilt during extreme heat or drying winds.
@@ -46,7 +46,7 @@ VI. Failure Signals vs. Normal Adjustment (P1)
 Vegetable Starts — Agent - Grade Care Narrative(Priority
 Tagged)
 Purpose: agent - readable horticultural narrative for generating care schedules and cautions.Priority tags:
-P1 = survival - critical, P2 = establishment success, P3 = optimization, P4 = advanced / reference.P1 statements are
+P1 = survival - critical, P2 = planting phase success, P3 = optimization, P4 = advanced / reference.P1 statements are
 conservative and exception - aware.
     A.Site & Light Requirements(P1)
 • Most fruiting vegetables need full sun(6–8 + hours).
@@ -86,7 +86,7 @@ conservative and exception - aware.
 • Frost: cover overnight; remove in morning.
 • Heat wave: provide afternoon shade; increase watering; avoid fertilizing during heat stress.
 • Heavy rain: ensure drainage; avoid working wet soil(compaction).
-    K.Growth & Establishment Signals(P2)
+    K.Growth & Stabilization Signals(P2)
 • Normal: slight wilt on planting day; recovery within hours after watering.
 • Concerning: persistent wilt with moist soil, stem collapse, fast - spreading discoloration.
     L.Safety & Customer Guardrails(P1)
@@ -96,7 +96,7 @@ conservative and exception - aware.
 • Short seasons: use soil thermometer and row covers; time mulch for warming.
 • Hot / humid: prioritize airflow and early - day watering.
     N.Lifecycle Transition(Post 30 Days)(P4)
-• Move to crop - specific schedules(staking, pruning, feeding) after establishment.
+• Move to crop - specific schedules(staking, pruning, feeding) after planting phase.
 `
     ,
     "General_Annuals_Agent_Grade_Priority.pdf": `
@@ -215,7 +215,7 @@ conservative and exception - aware.
 • Provide afternoon shade for heat - sensitive types in very hot climates if label indicates.
     B.Temperature & Climate Constraints(P1)
 • Plant only when soil is workable(not frozen / waterlogged).
-• Establishment best in moderate temps; treat prolonged > 90°F(32°C) as high - risk during first month.
+• Planting Phase best in moderate temps; treat prolonged > 90°F(32°C) as high - risk during first month.
 • Late frosts can damage early growth / buds; protect if freeze is forecast soon after planting.
     C.Seasonal Timing / Planting Window(P1)
 • Best planting: autumn to early spring when soil isn’t extremely wet or frozen.
@@ -225,7 +225,7 @@ conservative and exception - aware.
     D.Watering & Moisture Profile(Day 0–30)(P1)
 • Water in thoroughly at planting.
 • Days 1–14: check moisture daily; water deeply when top few inches are dry.
-• Typical establishment schedule: Weeks 1–2 daily; Weeks 3–12 every 2–3 days; then weekly until
+• Typical planting phase schedule: Weeks 1–2 daily; Weeks 3–12 every 2–3 days; then weekly until
 established(adjust for rain / soil).
 • Avoid soggy soils; pause irrigation after heavy rains.
     E.Soil Requirements(P2)
@@ -237,7 +237,7 @@ established(adjust for rain / soil).
 • Do not prune heavily at planting; remove only dead / broken wood(pruning timing depends on bloom habit).
     G.Fertilization Guidance(P1)
 • Avoid quick - release fertilizing at planting; rely on good soil prep.
-• Fertilize only after establishment / active growth and only when soil moisture is adequate; prefer
+• Fertilize only after planting phase / active growth and only when soil moisture is adequate; prefer
 slow - release or compost.
     H.Pest & Disease Risk(Early Window)(P2)
 • Aphids can appear on tender growth; strong water spray is a first response.
@@ -303,7 +303,7 @@ clay.
 • Set root flare at or slightly above finished grade; never bury the trunk / stem base.
 • Loosen circling roots; ensure good soil - root contact(no air pockets).
 • Mulch 2–3 inches over the root zone; keep mulch 2–3 inches away from stems / trunks.
-• Stake only if necessary(wind exposure / top - heavy); remove supports after establishment.
+• Stake only if necessary(wind exposure / top - heavy); remove supports after planting phase.
     G.Fertilization Guidance(P1)
 • Avoid quick - release fertilizer at planting; it can inhibit root growth and increase stress.
 • Do not fertilize drought - stressed shrubs; fertilize only after adequate rooting, or if a soil test indicates need.
@@ -339,7 +339,7 @@ burlap / frost cloth; refresh mulch.
 hard freezes.
 • High rainfall regions: prioritize raised planting and drainage improvements.
     N.Lifecycle Transition(Post 30 Days)(P4)
-• After stabilization: shift from establishment schedule to weather - based deep watering; avoid frequent
+• After stabilization: shift from planting phase schedule to weather - based deep watering; avoid frequent
 shallow irrigation.
 • Pruning is species - dependent; restrict to dead / damaged wood until established.
 `
